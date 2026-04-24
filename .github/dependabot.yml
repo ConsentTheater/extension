@@ -13,6 +13,14 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
+    ignore:
+      # Hold TypeScript major bumps across all ConsentTheater repos (extension,
+      # playbill, website) so the fleet stays on the same major. The hard
+      # constraint lives in the website — @astrojs/check / @volar/kit don't
+      # yet declare peer support for TS 7+ and `astro check` ERESOLVEs on a
+      # major skew. Raise the floor manually across all repos in lockstep.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
