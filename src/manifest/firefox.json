@@ -35,8 +35,7 @@
     "open_at_install": false
   },
   "background": {
-    "scripts": ["background/background.js"],
-    "service_worker": "background/background.js"
+    "scripts": ["background/background.js"]
   },
   "permissions": [
     "cookies",
