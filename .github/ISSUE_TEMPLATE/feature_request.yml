@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest a new feature or improvement to the extension
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement.
+
+        Reminder: ConsentTheater is strictly **on demand** — there is no
+        passive analysis on every page visit. Suggestions that require
+        always-on background scanning will probably be declined.
+        Tracker catalogue changes live in
+        [ConsentTheater/playbill](https://github.com/ConsentTheater/playbill),
+        not here.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the user need or scenario.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the extension do? Include UI sketches or example flows if helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Additional context

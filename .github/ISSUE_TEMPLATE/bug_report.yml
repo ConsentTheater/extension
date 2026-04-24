@@ -1,0 +1,90 @@
+name: Bug report
+description: The extension crashes, misbehaves, or the scan produces the wrong result
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        **If the issue is about a specific tracker being missed, misnamed, or
+        misclassified** (wrong company, wrong category, wrong severity), the
+        tracker catalogue lives in a separate repository —
+        [ConsentTheater/playbill](https://github.com/ConsentTheater/playbill).
+        Please file catalogue corrections there.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps, including any site URL where the issue shows up.
+      placeholder: |
+        1. Open the extension on https://example.com/
+        2. Click "Scan this page"
+        3. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome (stable)
+        - Chrome (beta / dev / canary)
+        - Chromium-based (Edge, Brave, Arc, Opera, Vivaldi)
+        - Firefox (stable)
+        - Firefox (ESR / nightly / developer)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: browser-version
+    attributes:
+      label: Browser version
+      placeholder: "e.g. Chrome 141 / Firefox 142"
+    validations:
+      required: true
+
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      description: Shown on the extensions management page (chrome://extensions or about:addons).
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 14 / Windows 11 / Ubuntu 24.04"
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console / service worker errors
+      description: Any errors from DevTools → Console, or from the background service worker (chrome://extensions → Inspect views).
+      render: text
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Additional context, screenshots, HAR excerpts

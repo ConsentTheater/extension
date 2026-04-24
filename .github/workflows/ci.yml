@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run validate:chrome
+
+      - run: npm run validate:firefox
+
+      - name: Build all targets
+        run: npm run build:all
+
+      - name: Upload Chrome build
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist-chrome
+          path: dist/chrome
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Firefox build
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist-firefox
+          path: dist/firefox
+          if-no-files-found: error
+          retention-days: 14

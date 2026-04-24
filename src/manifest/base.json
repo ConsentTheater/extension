@@ -1,0 +1,14 @@
+{
+  "name": "ConsentTheater",
+  "short_name": "ConsentTheater",
+  "version": "0.1.0",
+  "description": "See what a website is really tracking before you click Accept — in plain language, no tech skills required.",
+  "author": "ConsentTheater",
+  "homepage_url": "https://consenttheater.org",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  }
+}

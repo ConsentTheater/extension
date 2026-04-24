@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "ConsentTheater",
+  "description": "See what a website is really tracking before you click Accept — in plain language, no tech skills required.",
+  "version": "0.1.0",
+  "developer": {
+    "name": "ConsentTheater",
+    "url": "https://consenttheater.org"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "extension@consenttheater.org",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "action": {
+    "default_title": "🎭 ConsentTheater",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png"
+    }
+  },
+  "sidebar_action": {
+    "default_panel": "ui/sidebar.html",
+    "default_title": "🎭 ConsentTheater",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png"
+    },
+    "open_at_install": false
+  },
+  "background": {
+    "scripts": ["background/background.js"],
+    "service_worker": "background/background.js"
+  },
+  "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "webRequest",
+    "webNavigation",
+    "browsingData"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content-script.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}

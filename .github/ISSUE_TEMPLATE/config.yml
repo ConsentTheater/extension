@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Tracker catalogue correction (wrong company, missing domain, wrong severity)
+    url: https://github.com/ConsentTheater/playbill/issues/new/choose
+    about: Tracker data lives in the Playbill repo, not in the extension.
+  - name: Website or consenttheater.org bug
+    url: https://github.com/ConsentTheater/website/issues/new/choose
+    about: Issues with the public website belong in the website repository.
+  - name: Privacy or security concerns
+    url: https://consenttheater.org/privacy/
+    about: For privacy or security concerns, see the privacy page or email developer@consenttheater.org.
