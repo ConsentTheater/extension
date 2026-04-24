@@ -40,7 +40,7 @@ jobs:
         run: npm run build:all
 
       - name: Upload Chrome build
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: dist-chrome
           path: dist/chrome
@@ -48,7 +48,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Firefox build
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: dist-firefox
           path: dist/firefox
