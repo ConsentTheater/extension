@@ -32,11 +32,17 @@ import { isSameOrSubdomain, matchCookie, matchDomain } from '@/lib/tracker-match
 import type { TrackerDB } from '@/lib/tracker-matcher';
 import { loadPlaybill } from '@consenttheater/playbill';
 
-// Injected at build time by scripts/build.js — the @consenttheater/playbill
-// version pinned in the extension's package.json devDependencies.
+// Injected at build time by scripts/build.js.
 declare const __PLAYBILL_VERSION__: string;
+declare const __EXTENSION_VERSION__: string;
 import type { ObservedBanner } from '@/lib/observations';
 import { detectSuspiciousPattern } from '@/lib/pattern-detector';
+import {
+  buildHar, newHarRecorderState, recordRequest, recordRequestHeaders,
+  recordResponseHeaders, recordResponseStarted, recordComplete, recordError,
+  resetHar, startPage, type HarRecorderState
+} from './har-recorder';
+import type { HarLog } from '@/lib/har-types';
 import type { ConsentAction } from '@/ui/types/messages';
 
 declare const browser: typeof chrome | undefined;
@@ -64,6 +70,7 @@ interface TabState {
   scanTimer: ReturnType<typeof setTimeout> | null;
   lastReportItemCount: number;
   updateTimer: ReturnType<typeof setTimeout> | null;
+  har: HarRecorderState;
 }
 
 function newTabState(): TabState {
@@ -80,7 +87,8 @@ function newTabState(): TabState {
     report: null,
     scanTimer: null,
     lastReportItemCount: 0,
-    updateTimer: null
+    updateTimer: null,
+    har: newHarRecorderState()
   };
 }
 
@@ -402,27 +410,85 @@ bAPI.webRequest.onBeforeRequest.addListener(
 
     let host: string;
     try { host = new URL(details.url).hostname; } catch { return; }
-    if (isSameOrSubdomain(host, state.hostname)) return;
 
-    const match = matchDomain(trackerDB, host);
-    if (!match) return;
+    const match = isSameOrSubdomain(host, state.hostname) ? null : matchDomain(trackerDB, host);
+    const beforeConsent = !state.consentResolvedAt || details.timeStamp < state.consentResolvedAt;
 
-    state.requests.push({
-      url: details.url,
-      hostname: host,
-      company: match.company,
-      service: match.service,
-      category: match.category,
-      consent_burden: match.consent_burden,
-      note: match.note,
-      type: details.type,
-      ts: details.timeStamp,
-      beforeConsent: !state.consentResolvedAt || details.timeStamp < state.consentResolvedAt
-    });
+    // HAR collection — every request, including first-party. Useful for
+    // professional auditors who want a full network trace, not just trackers.
+    recordRequest(state.har, details.requestId, details.url, details.method, details.type, details.timeStamp, beforeConsent, match);
 
-    if (state.phase === 'monitoring') scheduleUpdate(details.tabId, state);
+    // Tracker pipeline — third-party only, must match Playbill.
+    if (match) {
+      state.requests.push({
+        url: details.url,
+        hostname: host,
+        company: match.company,
+        service: match.service,
+        category: match.category,
+        consent_burden: match.consent_burden,
+        note: match.note,
+        type: details.type,
+        ts: details.timeStamp,
+        beforeConsent
+      });
+
+      if (state.phase === 'monitoring') scheduleUpdate(details.tabId, state);
+    }
   },
   { urls: ['<all_urls>'] }
+);
+
+// HAR completion pipeline — request headers, response headers, status, IP, errors.
+// Registered with extraInfoSpec so headers actually arrive (security-sensitive
+// headers like Cookie / Set-Cookie / Authorization need 'extraHeaders' explicitly).
+const HEADER_LISTENER_FILTER = { urls: ['<all_urls>'] };
+
+bAPI.webRequest.onSendHeaders.addListener(
+  (details): undefined => {
+    const state = tabStates.get(details.tabId);
+    if (!state || !isCapturing(state)) return;
+    recordRequestHeaders(state.har, details.requestId, details.requestHeaders, details.timeStamp);
+  },
+  HEADER_LISTENER_FILTER,
+  ['requestHeaders', 'extraHeaders']
+);
+
+bAPI.webRequest.onHeadersReceived.addListener(
+  (details): undefined => {
+    const state = tabStates.get(details.tabId);
+    if (!state || !isCapturing(state)) return;
+    recordResponseHeaders(state.har, details.requestId, details.statusCode, details.statusLine, details.responseHeaders, details.timeStamp);
+  },
+  HEADER_LISTENER_FILTER,
+  ['responseHeaders', 'extraHeaders']
+);
+
+bAPI.webRequest.onResponseStarted.addListener(
+  (details): undefined => {
+    const state = tabStates.get(details.tabId);
+    if (!state || !isCapturing(state)) return;
+    recordResponseStarted(state.har, details.requestId, details.ip, details.fromCache, details.timeStamp);
+  },
+  HEADER_LISTENER_FILTER
+);
+
+bAPI.webRequest.onCompleted.addListener(
+  (details): undefined => {
+    const state = tabStates.get(details.tabId);
+    if (!state || !isCapturing(state)) return;
+    recordComplete(state.har, details.requestId, details.timeStamp);
+  },
+  HEADER_LISTENER_FILTER
+);
+
+bAPI.webRequest.onErrorOccurred.addListener(
+  (details): undefined => {
+    const state = tabStates.get(details.tabId);
+    if (!state || !isCapturing(state)) return;
+    recordError(state.har, details.requestId, details.error || 'unknown', details.timeStamp);
+  },
+  HEADER_LISTENER_FILTER
 );
 
 /**
@@ -532,6 +598,7 @@ bAPI.tabs.onUpdated.addListener((tabId, changeInfo) => {
       state.origin = null;
       state.hostname = null;
       state.lastReportItemCount = 0;
+      resetHar(state.har);
     }
     void setBadge(tabId, '', '#6b7280');
     // Tell the sidebar to resync — its useCurrentTab also triggers on
@@ -581,6 +648,8 @@ async function handleMessage(
       return startTest(message.tabId);
     case 'getReport':
       return getReport(message.tabId);
+    case 'getHar':
+      return getHar(message.tabId);
     case 'getState': {
       const s = tabStates.get(message.tabId);
       return {
@@ -633,6 +702,7 @@ async function startTest(tabId: number): Promise<TestResponse> {
   state.scanStartedAt = Date.now();
   state.origin = url.origin;
   state.hostname = url.hostname;
+  startPage(state.har, url.hostname);
   tabStates.set(tabId, state);
 
   await setBadge(tabId, '...', '#6b7280');
@@ -688,6 +758,25 @@ async function getReport(tabId: number): Promise<ReportResponse> {
   }
 
   return { report: state.report, phase: state.phase };
+}
+
+interface HarResponse { har: HarLog | null; error?: string }
+
+function getHar(tabId: number): HarResponse {
+  const state = tabStates.get(tabId);
+  if (!state) return { har: null, error: 'No scan state for this tab' };
+  if (state.har.entries.length === 0 && state.har.pending.size === 0) {
+    return { har: null, error: 'No requests captured yet — start a scan first' };
+  }
+  const browserName = (typeof browser !== 'undefined' && browser?.runtime) ? 'Firefox' : 'Chrome';
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+  return {
+    har: buildHar(state.har, {
+      extensionVersion: __EXTENSION_VERSION__,
+      browserName,
+      browserVersion: ua
+    })
+  };
 }
 
 function buildReport(state: TabState): Report {

@@ -1,4 +1,4 @@
-import { ShieldCheck, Broom, ClipboardText, ArrowClockwise, Broadcast, FilePdf } from '@phosphor-icons/react';
+import { ShieldCheck, Broom, ClipboardText, ArrowClockwise, Broadcast, FilePdf, FileCode } from '@phosphor-icons/react';
 import { browserAPI } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Card, CardContent } from '@/ui/components/ui/card';
@@ -147,6 +147,38 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
     }
   };
 
+  const onExportHar = async () => {
+    try {
+      const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      const res = await new Promise<{ har?: object; error?: string }>((resolve) => {
+        browserAPI.runtime.sendMessage({ type: 'getHar', tabId: tab.id }, (r) => {
+          void browserAPI.runtime.lastError;
+          resolve(r || {});
+        });
+      });
+      if (!res.har) {
+        console.warn('no HAR available:', res.error);
+        return;
+      }
+      const json = JSON.stringify(res.har, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      let host = 'scan';
+      try { if (tab.url) host = new URL(tab.url).hostname; } catch { /* ignore */ }
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `consenttheater-${host}-${ts}.har`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('HAR export failed', e);
+    }
+  };
+
   const preCookies = report.cookies.filter(c => c.beforeConsent);
   const preRequests = report.requests.filter(r => r.beforeConsent);
 
@@ -168,15 +200,19 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
       </ScrollArea>
 
       <div className="sticky bottom-0 flex flex-wrap gap-2 border-t bg-background p-3">
-        <Button variant="outline" onClick={onCopy} className="flex-1 min-w-[6rem]">
+        <Button variant="outline" onClick={onCopy} className="flex-1 min-w-[5rem]">
           <ClipboardText size={14} weight="regular" />
           {copied ? 'Copied' : 'Copy'}
         </Button>
-        <Button variant="outline" onClick={onExportPdf} className="flex-1 min-w-[6rem]">
+        <Button variant="outline" onClick={onExportPdf} className="flex-1 min-w-[5rem]">
           <FilePdf size={14} weight="regular" />
           PDF
         </Button>
-        <Button onClick={onRetest} className="flex-1 min-w-[6rem]">
+        <Button variant="outline" onClick={onExportHar} className="flex-1 min-w-[5rem]" title="HTTP Archive 1.2 — opens in Charles, HTTPToolkit, browser DevTools">
+          <FileCode size={14} weight="regular" />
+          HAR
+        </Button>
+        <Button onClick={onRetest} className="flex-1 min-w-[5rem]">
           <ArrowClockwise size={14} weight="regular" />
           Retest
         </Button>

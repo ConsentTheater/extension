@@ -29,6 +29,7 @@ const SHARED_DIR = path.join(DIST_DIR, '.shared');
 const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf-8'));
 const PLAYBILL_VERSION = (pkgJson.devDependencies?.['@consenttheater/playbill'] ?? '')
   .replace(/^[~^]/, '');
+const EXTENSION_VERSION = pkgJson.version || '0.0.0';
 
 const args = process.argv.slice(2);
 const targetArg = args.find(a => a.startsWith('--target='));
@@ -49,7 +50,8 @@ const BG_CONTENT_BUILD_OPTIONS = {
     '@': SRC_DIR
   },
   define: {
-    __PLAYBILL_VERSION__: JSON.stringify(PLAYBILL_VERSION)
+    __PLAYBILL_VERSION__: JSON.stringify(PLAYBILL_VERSION),
+    __EXTENSION_VERSION__: JSON.stringify(EXTENSION_VERSION)
   },
   tsconfig: path.join(ROOT_DIR, 'tsconfig.json')
 };

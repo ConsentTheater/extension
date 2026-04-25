@@ -57,6 +57,23 @@ honester labels.
   bundle weight beyond the report layout itself. Tables are page-break-aware,
   print color is preserved for the burden chips, and the saved-PDF filename
   defaults to the scanned hostname.
+- **HAR 1.2 export.** New `HAR` button next to PDF downloads the full network
+  trace from the scan as a standard HAR file. Opens in Charles, HTTPToolkit,
+  browser DevTools' Network panel ("Import HAR"), and any `har-cli` tooling.
+  Captures method / URL / request headers / response headers / status / IP /
+  approximate timings for every request — first-party included, not just
+  trackers. Each entry carries a non-spec `_consent_theater` field with the
+  Playbill match (company, service, category, consent_burden, before_consent)
+  for auditors who want to filter the trace.
+
+  Bodies (request `postData.text` and response `content.text`) are not captured
+  — that needs `chrome.debugger`, which prompts the user on every scan; the UX
+  cost was not worth it. The resulting HAR is still valid against the 1.2 spec.
+
+  No new permissions: existing `webRequest` is enough. Listeners use
+  `extraHeaders` to surface CORS / Set-Cookie / Authorization headers.
+- Build-time `__EXTENSION_VERSION__` injection (alongside `__PLAYBILL_VERSION__`),
+  used as the HAR `creator.version`.
 
 ### Fixed
 - Removed the unsupported `background.service_worker` key from the Firefox manifest.

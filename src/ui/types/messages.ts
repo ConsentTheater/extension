@@ -21,6 +21,7 @@ export type ExtensionMessage =
   | { type: 'runTest'; tabId: number }
   | { type: 'getState'; tabId: number }
   | { type: 'getReport'; tabId: number }
+  | { type: 'getHar'; tabId: number }
   // Content script → background
   | { type: 'bannerDetected'; banner: ObservedBanner }
   | { type: 'consentResolved'; action: ConsentAction }
