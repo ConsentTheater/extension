@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Cookie, Database, CaretDown, CaretUp, Warning, ShieldCheck, Globe, Trash, Flask, ArrowClockwise, GearSix, Broadcast, Question, Cloud } from '@phosphor-icons/react';
+import { useEffect, useState } from 'react';
+import { Cookie, Database, CaretDown, CaretUp, Warning, ShieldCheck, Globe, Trash, Flask, ArrowClockwise, GearSix, Broadcast, Question, Cloud, FilePdf, FileCode, ClipboardText } from '@phosphor-icons/react';
 import { Card, CardContent } from '@/ui/components/ui/card';
 import { Badge } from '@/ui/components/ui/badge';
 import { Button } from '@/ui/components/ui/button';
@@ -59,6 +59,33 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
   const { cookies, trackers, localStorage, sessionStorage, hostname, loading, error, refresh } = useLiveCookies();
   const [clearing, setClearing] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [hasReport, setHasReport] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Track scan state so the export bar appears once the background has captured something.
+  useEffect(() => {
+    let cancelled = false;
+    const check = () => {
+      browserAPI.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const t = tabs?.[0];
+        if (!t?.id) return;
+        browserAPI.runtime.sendMessage({ type: 'getState', tabId: t.id }, (res) => {
+          void browserAPI.runtime.lastError;
+          if (cancelled) return;
+          setHasReport(!!res?.hasReport);
+        });
+      });
+    };
+    check();
+    const listener = (msg: { type?: string }) => {
+      if (msg?.type === 'reportReady' || msg?.type === 'reportUpdated') check();
+    };
+    browserAPI.runtime.onMessage.addListener(listener);
+    return () => {
+      cancelled = true;
+      browserAPI.runtime.onMessage.removeListener(listener);
+    };
+  }, []);
 
   if (loading || testing) {
     return (
@@ -114,19 +141,18 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
       const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) { setTesting(false); return; }
 
-      // Clear all cookies + storage
+      // Run the full background scan pipeline — clears storage + reloads + captures
+      // pre-consent requests + cookies via webRequest into the HAR recorder, and
+      // finalises a Report after SCAN_WINDOW_MS or the user's consent click.
       await new Promise<void>((resolve) => {
-        browserAPI.runtime.sendMessage({ type: 'clearAll', tabId: tab.id }, () => {
+        browserAPI.runtime.sendMessage({ type: 'runTest', tabId: tab.id }, () => {
           void browserAPI.runtime.lastError;
           resolve();
         });
       });
 
-      // Reload the page
-      await browserAPI.tabs.reload(tab.id, { bypassCache: true });
-
-      // Wait for page to fully load before refreshing cookie list
-      // Don't refresh too early — otherwise shows "no cookies" briefly
+      // Refresh the live cookie/tracker lists periodically while the scan window
+      // is open. The export bar shows up automatically when reportReady arrives.
       setTimeout(() => {
         refresh();
         setTimeout(() => {
@@ -137,6 +163,62 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
     } catch {
       setTesting(false);
     }
+  };
+
+  const handleCopyReport = async () => {
+    try {
+      const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      const res = await new Promise<{ report?: { stats?: Record<string, unknown> } }>((resolve) => {
+        browserAPI.runtime.sendMessage({ type: 'getReport', tabId: tab.id }, (r) => {
+          void browserAPI.runtime.lastError;
+          resolve(r || {});
+        });
+      });
+      if (!res.report) return;
+      await navigator.clipboard.writeText(JSON.stringify(res.report, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) { console.error('copy failed', e); }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      const reportUrl = browserAPI.runtime.getURL(`ui/report.html?tabId=${tab.id}`);
+      await browserAPI.tabs.create({ url: reportUrl });
+    } catch (e) { console.error('PDF export failed', e); }
+  };
+
+  const handleExportHar = async () => {
+    try {
+      const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      const res = await new Promise<{ har?: object; error?: string }>((resolve) => {
+        browserAPI.runtime.sendMessage({ type: 'getHar', tabId: tab.id }, (r) => {
+          void browserAPI.runtime.lastError;
+          resolve(r || {});
+        });
+      });
+      if (!res.har) {
+        console.warn('no HAR available:', res.error);
+        return;
+      }
+      const json = JSON.stringify(res.har, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      let host = 'scan';
+      try { if (pageUrl) host = new URL(pageUrl).hostname; } catch { /* ignore */ }
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `consenttheater-${host}-${ts}.har`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) { console.error('HAR export failed', e); }
   };
 
   const handleClearAll = async () => {
@@ -311,7 +393,23 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
         )}
       </ScrollArea>
 
-      {/* Action buttons */}
+      {/* Export bar — appears once a scan has produced a report. */}
+      {hasReport && (
+        <div className="shrink-0 sticky bottom-0 flex flex-wrap gap-2 border-t bg-background p-3">
+          <Button variant="outline" size="sm" onClick={handleCopyReport} className="flex-1 min-w-[5rem] h-8 text-xs">
+            <ClipboardText size={14} weight="regular" />
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf} className="flex-1 min-w-[5rem] h-8 text-xs" title="Open scan report in a new tab and Save as PDF from the browser">
+            <FilePdf size={14} weight="regular" />
+            PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportHar} className="flex-1 min-w-[5rem] h-8 text-xs" title="HTTP Archive 1.2 — opens in Charles, HTTPToolkit, browser DevTools">
+            <FileCode size={14} weight="regular" />
+            HAR
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
