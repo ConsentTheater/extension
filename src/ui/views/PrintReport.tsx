@@ -27,6 +27,14 @@ export function PrintReport({ report }: { report: Report }) {
   let host = '—';
   try { if (report.origin) host = new URL(report.origin).hostname; } catch { /* ignore */ }
 
+  // Approximate location from the IANA timezone — `Europe/Madrid` → "Madrid, Europe".
+  // Local-only; no network call. Privacy promise preserved.
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  const tzParts = tz.split('/');
+  const tzCity = (tzParts[tzParts.length - 1] || '').replace(/_/g, ' ');
+  const tzRegion = tzParts.length > 1 ? tzParts[0].replace(/_/g, ' ') : '';
+  const locationLabel = tzCity ? (tzRegion ? `${tzCity}, ${tzRegion}` : tzCity) : '';
+
   const preCookies = sortByBurden(report.cookies.filter(c => c.beforeConsent));
   const preRequests = dedupRequests(report.requests.filter(r => r.beforeConsent));
   const dataLeaks = dedupRequests(report.requests.filter(r => r.category === 'data_leak'));
@@ -57,11 +65,14 @@ export function PrintReport({ report }: { report: Report }) {
             <Row term="Site"><span className="font-mono break-all">{host}</span></Row>
             <Row term="Origin"><span className="font-mono break-all">{origin}</span></Row>
             <Row term="Scanned at">{generatedAt.toISOString().replace('T', ' ').slice(0, 19)} UTC</Row>
-            <Row term="Local time">{generatedAt.toLocaleString()}</Row>
+            <Row term="Local time">
+              <span className="block">{generatedAt.toLocaleString()}</span>
+              {locationLabel && <span className="block text-muted-foreground">{locationLabel}</span>}
+            </Row>
           </dl>
         </header>
 
-        <Section title="Summary">
+        <Section title="Summary" compact>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat value={report.stats.preConsentCookies} label="Cookies before consent" emphasis={report.stats.preConsentCookies > 0} />
             <Stat value={report.stats.preConsentRequests} label="Requests before consent" emphasis={report.stats.preConsentRequests > 0} />
@@ -70,7 +81,7 @@ export function PrintReport({ report }: { report: Report }) {
           </div>
         </Section>
 
-        <Section title="Consent banner">
+        <Section title="Consent banner" compact>
           <BannerPanel report={report} />
         </Section>
 
@@ -110,6 +121,47 @@ export function PrintReport({ report }: { report: Report }) {
           </Section>
         )}
 
+        <Section title="Legend" compact>
+          <div className="space-y-3 text-xs">
+            <div>
+              <p className="mb-1.5 font-semibold text-foreground">Consent burden</p>
+              <p className="mb-2 text-muted-foreground leading-relaxed">
+                What each tracker requires under GDPR / ePrivacy. Same labels are used in the
+                {' '}<span className="font-mono">@consenttheater/playbill</span> catalogue.
+              </p>
+              <ul className="space-y-1">
+                <LegendItem chip="required_strict" desc="Cross-site profiling, ad-tech retargeting, fingerprinting, session replay. Always needs prior, informed, freely-given consent." />
+                <LegendItem chip="required" desc="Standard analytics / marketing tracking. Consent required in nearly all interpretations." />
+                <LegendItem chip="contested" desc="Tracking-adjacent or jurisdiction-dependent. Some authorities allow under legitimate interest, others require consent." />
+                <LegendItem chip="minimal" desc="Functional, security, or strictly-necessary in most readings. Often exempt from consent." />
+              </ul>
+            </div>
+            <div>
+              <p className="mb-1.5 font-semibold text-foreground">Categories</p>
+              <p className="text-muted-foreground leading-relaxed">
+                <span className="font-mono">advertising</span>, <span className="font-mono">analytics</span>,{' '}
+                <span className="font-mono">marketing</span>, <span className="font-mono">tag_manager</span>,{' '}
+                <span className="font-mono">social</span>, <span className="font-mono">session_recording</span>,{' '}
+                <span className="font-mono">fingerprinting</span> — typically need consent.
+                {' '}<span className="font-mono">functional</span>, <span className="font-mono">security</span>,{' '}
+                <span className="font-mono">consent</span> — usually consent-exempt.
+                {' '}<span className="font-mono">data_leak</span> — third-party calls that exfiltrate IP / user-agent
+                even when the resource itself looks benign (fonts, embedded video, hosted libraries); multiple
+                EU rulings treat these as personal-data transfers regardless of consent.
+              </p>
+            </div>
+            <div>
+              <p className="mb-1.5 font-semibold text-foreground">Before consent</p>
+              <p className="text-muted-foreground leading-relaxed">
+                "Before consent" means the cookie was set or the request fired{' '}
+                <em>before the user clicked Accept / Reject / Manage</em> on the consent banner — or, if no
+                banner was shown, before any user interaction at all. This is the GDPR-relevant moment:
+                tracking that happens before consent generally cannot rely on consent as a legal basis.
+              </p>
+            </div>
+          </div>
+        </Section>
+
         <footer className="mt-10 border-t pt-4 text-xs text-muted-foreground space-y-1">
           <p>
             ConsentTheater records what was observed during a single scan; it does not issue compliance
@@ -128,9 +180,12 @@ export function PrintReport({ report }: { report: Report }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: preact.ComponentChildren }) {
+function Section({ title, children, compact }: { title: string; children: preact.ComponentChildren; compact?: boolean }) {
+  // `compact` (header / summary / banner) stays together on one printed page.
+  // Long sections (cookie tables, request tables) are allowed to break across
+  // pages — `print:break-inside-avoid` was forcing premature page breaks.
   return (
-    <section className="mb-6 print:mb-4 print:break-inside-avoid">
+    <section className={`mb-6 print:mb-4 ${compact ? 'print:break-inside-avoid' : ''}`}>
       <h2 className="mb-2 border-b pb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
       <div>{children}</div>
     </section>
@@ -158,24 +213,42 @@ function Stat({ value, label, emphasis }: { value: number; label: string; emphas
 function BannerPanel({ report }: { report: Report }) {
   const b = report.banner;
   if (!b || !b.detected) {
-    return <p className="text-sm text-muted-foreground">No consent banner was detected on this page during the scan.</p>;
+    return (
+      <p className="rounded border border-dashed bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+        No consent banner was detected on this page during the scan.
+      </p>
+    );
   }
   return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
-      <Row term="Detected">Yes</Row>
-      <Row term="Accept">{b.hasAcceptButton ? 'present' : 'missing'}</Row>
-      <Row term="Reject">{b.hasRejectButton ? 'present' : 'missing'}</Row>
-      <Row term="Manage">{b.hasManageButton ? 'present' : 'missing'}</Row>
-      {report.stats.consentAction && (
-        <Row term="User clicked"><span className="font-mono">{report.stats.consentAction}</span></Row>
-      )}
+    <div className="rounded border bg-muted/20 px-3 py-2.5 text-sm space-y-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <BannerStatus label="Detected" present />
+        <BannerStatus label="Accept" present={!!b.hasAcceptButton} />
+        <BannerStatus label="Reject" present={!!b.hasRejectButton} />
+        <BannerStatus label="Manage" present={!!b.hasManageButton} />
+        {report.stats.consentAction && (
+          <span className="ml-auto text-xs text-muted-foreground">
+            User clicked <span className="font-mono font-medium text-foreground">{report.stats.consentAction}</span>
+          </span>
+        )}
+      </div>
       {b.textPreview && (
-        <div className="col-span-2 sm:col-span-4 mt-2">
-          <dt className="text-muted-foreground text-xs">Banner text excerpt</dt>
-          <dd className="mt-1 rounded border bg-muted/30 px-2 py-1 font-mono text-[11px] leading-snug">{b.textPreview}</dd>
+        <div className="border-t pt-2">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Banner text excerpt</p>
+          <p className="font-mono text-[11px] leading-snug text-foreground/80">{b.textPreview}</p>
         </div>
       )}
-    </dl>
+    </div>
+  );
+}
+
+function BannerStatus({ label, present }: { label: string; present: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`inline-block h-2 w-2 rounded-full ${present ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden />
+      <span className="text-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{present ? 'present' : 'missing'}</span>
+    </span>
   );
 }
 
@@ -239,6 +312,15 @@ function Th({ children, className }: { children: preact.ComponentChildren; class
 
 function Td({ children }: { children: preact.ComponentChildren }) {
   return <td className="py-1.5 pr-2">{children}</td>;
+}
+
+function LegendItem({ chip, desc }: { chip: ConsentBurden; desc: string }) {
+  return (
+    <li className="flex items-start gap-2">
+      <BurdenChip value={chip} />
+      <span className="text-muted-foreground leading-relaxed">{desc}</span>
+    </li>
+  );
 }
 
 function BurdenChip({ value }: { value: ConsentBurden }) {
