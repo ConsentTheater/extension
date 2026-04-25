@@ -143,6 +143,27 @@
   #root { @apply h-full; }
 }
 
+/* Print mode — used when user picks "Save as PDF" from the report page. */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.4cm;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    height: auto;
+    min-width: 0;
+  }
+  .no-print { display: none !important; }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+  thead { display: table-header-group; }
+  /* Browsers strip backgrounds on print by default — opt the burden chips back in. */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+
 @layer utilities {
   .font-display { font-family: var(--font-display); }
   .font-sans { font-family: var(--font-sans); }

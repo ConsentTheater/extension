@@ -1,4 +1,5 @@
-import { ShieldCheck, Broom, ClipboardText, ArrowClockwise, Broadcast } from '@phosphor-icons/react';
+import { ShieldCheck, Broom, ClipboardText, ArrowClockwise, Broadcast, FilePdf } from '@phosphor-icons/react';
+import { browserAPI } from '@/lib/browser-api';
 import { Button } from '@/ui/components/ui/button';
 import { Card, CardContent } from '@/ui/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/components/ui/alert';
@@ -135,6 +136,17 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
     }
   };
 
+  const onExportPdf = async () => {
+    try {
+      const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      const reportUrl = browserAPI.runtime.getURL(`ui/report.html?tabId=${tab.id}`);
+      await browserAPI.tabs.create({ url: reportUrl });
+    } catch (e) {
+      console.error('export failed', e);
+    }
+  };
+
   const preCookies = report.cookies.filter(c => c.beforeConsent);
   const preRequests = report.requests.filter(r => r.beforeConsent);
 
@@ -155,12 +167,16 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
         </div>
       </ScrollArea>
 
-      <div className="sticky bottom-0 flex gap-2 border-t bg-background p-3">
-        <Button variant="outline" onClick={onCopy} className="flex-1">
+      <div className="sticky bottom-0 flex flex-wrap gap-2 border-t bg-background p-3">
+        <Button variant="outline" onClick={onCopy} className="flex-1 min-w-[6rem]">
           <ClipboardText size={14} weight="regular" />
-          {copied ? 'Copied' : 'Copy report'}
+          {copied ? 'Copied' : 'Copy'}
         </Button>
-        <Button onClick={onRetest} className="flex-1">
+        <Button variant="outline" onClick={onExportPdf} className="flex-1 min-w-[6rem]">
+          <FilePdf size={14} weight="regular" />
+          PDF
+        </Button>
+        <Button onClick={onRetest} className="flex-1 min-w-[6rem]">
           <ArrowClockwise size={14} weight="regular" />
           Retest
         </Button>

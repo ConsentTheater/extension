@@ -51,6 +51,12 @@ honester labels.
   presence) for the Scan view.
 - Per-company sort: pre-consent activity first, then by worst burden, then by
   name — so the entries that matter for an audit float to the top.
+- **PDF / print export.** New `PDF` button on the Scan view opens the report in
+  a full browser tab (`ui/report.html`) styled for paper. Use the browser's
+  built-in Print → Save as PDF to export. No third-party PDF library, no extra
+  bundle weight beyond the report layout itself. Tables are page-break-aware,
+  print color is preserved for the burden chips, and the saved-PDF filename
+  defaults to the scanned hostname.
 
 ### Fixed
 - Removed the unsupported `background.service_worker` key from the Firefox manifest.

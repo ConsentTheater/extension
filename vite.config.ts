@@ -39,6 +39,10 @@ export default defineConfig({
     minify: 'esbuild',
 
     rollupOptions: {
+      input: {
+        sidebar: path.resolve(__dirname, 'src/ui/index.html'),
+        report: path.resolve(__dirname, 'src/ui/report.html')
+      },
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
