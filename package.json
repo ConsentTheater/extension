@@ -1,6 +1,6 @@
 {
   "name": "@consenttheater/extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "See what a website is really doing before you click Accept. ConsentTheater spots tracking cookies, hidden data leaks, and sneaky consent banners — in plain language, no tech skills required.",
   "author": {
     "name": "ConsentTheater",

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ConsentTheater",
   "description": "See what a website is really tracking before you click Accept — in plain language, no tech skills required.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "action": {
     "default_title": "ConsentTheater",
     "default_icon": {
@@ -21,8 +21,6 @@
     "cookies",
     "storage",
     "tabs",
-    "activeTab",
-    "scripting",
     "webRequest",
     "webNavigation",
     "browsingData",
@@ -36,7 +34,7 @@
       "matches": ["<all_urls>"],
       "js": ["content/content-script.js"],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": true
     }
   ]
 }
