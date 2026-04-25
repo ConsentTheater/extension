@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-04-26
+
 ### Breaking changes
 
 This release reframes ConsentTheater around **observation**, not judgement —
@@ -43,6 +45,17 @@ honester labels.
   CSS color tokens.
 - The `severity-weighted` toolbar badge — it now shows a green `✓` when nothing
   fired pre-consent and the pre-consent count in red otherwise.
+- **`scripting` permission.** Chrome Web Store flagged this as requested-but-unused
+  during review (rejection rationale: "Requesting but not using the following
+  permission(s): scripting"). The content script is registered statically in
+  the manifest's `content_scripts` block — `chrome.scripting.*` is never called
+  at runtime, so the permission was dead weight.
+- **`activeTab` permission.** Audited proactively after the `scripting` rejection
+  (the policy says "Audit all other permissions"). `activeTab` grants temporary
+  host access on user invocation, but the extension already declares
+  `host_permissions: ["<all_urls>"]` for the tracker-classification pipeline,
+  which makes `activeTab` a strict subset and therefore redundant. Removed from
+  both Chrome and Firefox manifests; PRIVACY.md table updated to match.
 
 ### Added
 - `src/lib/observations.ts` — minimal observation types (`ObservedCookie`,
@@ -79,6 +92,13 @@ honester labels.
 - Removed the unsupported `background.service_worker` key from the Firefox manifest.
   Firefox MV3 uses `background.scripts` only, and the stray key produced an AMO
   validator warning. Chrome is unaffected (its manifest is merged from `chrome.json`).
+- LiveView's **Test** button now triggers the full background scan pipeline via
+  `runTest` (clear + reload + capture pre-consent state + finalise report)
+  instead of a soft `clearAll + reload`. Previously the scan pipeline was
+  unreachable from the UI, which meant the HAR recorder never armed and the
+  Report was never produced — so the new PDF / HAR / Copy export buttons had
+  no data to act on. They now appear in a sticky bottom bar once the scan
+  finishes.
 
 ## [0.1.0] — 2026-04-24
 

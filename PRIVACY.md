@@ -78,13 +78,11 @@ through normal browser extension updates (Chrome Web Store, Firefox AMO).
 | `cookies`                     | Read and clear cookies for the scanned origin, so the scan starts from a clean slate and so the report can classify which cookies were set. |
 | `storage`                     | Save your UI preferences (theme, language) in local extension storage.           |
 | `tabs`                        | Know which tab you want to scan and re-sync the sidebar when you switch tabs.    |
-| `activeTab`                   | Inspect the currently active tab when you click **Scan**.                        |
-| `scripting`                   | Inject the banner-detection content script into the tab being scanned.           |
 | `webRequest`                  | Observe outgoing requests during a scan to identify third-party tracker hosts.   |
 | `webNavigation`               | Know when the scanned tab finishes reloading, so the scan can capture pre-consent requests reliably. |
 | `browsingData`                | Clear `localStorage`, `sessionStorage`, `IndexedDB`, `cacheStorage`, and service workers for the scanned origin before the scan reloads the page — this is how we measure the _first visit_ state a real user would see. |
 | `sidePanel` (Chrome only)     | Open the ConsentTheater sidebar from the toolbar icon.                           |
-| `<all_urls>` (host access)    | Required for the above APIs to cover any site you might want to scan. The content script is only active on the tab where you click **Scan**. |
+| `<all_urls>` (host access)    | Required for the above APIs to cover any site you might want to scan. The content script only does work on the tab where you click **Scan**. |
 
 No permission is used for any purpose other than the ones listed above.
 
