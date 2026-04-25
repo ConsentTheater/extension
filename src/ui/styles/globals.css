@@ -34,11 +34,6 @@
   --color-warning: hsl(var(--warning));
   --color-link: hsl(var(--link));
 
-  --color-band-compliant: hsl(var(--band-compliant));
-  --color-band-at-risk: hsl(var(--band-at-risk));
-  --color-band-non-compliant: hsl(var(--band-non-compliant));
-  --color-band-violating: hsl(var(--band-violating));
-
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 6px);
@@ -83,10 +78,6 @@
   --input: 220 13% 86%;
   --ring: 220 100% 30%;
   --radius: 0px;
-  --band-compliant: 152 69% 28%;
-  --band-at-risk: 25 90% 32%;
-  --band-non-compliant: 16 85% 38%;
-  --band-violating: 0 72% 42%;
   --warning: 25 90% 32%;
   --link: 220 100% 30%;
   --font-display: Georgia, "Times New Roman", "Noto Serif", "Palatino", serif;
@@ -125,10 +116,6 @@
   --muted-foreground: 220 15% 25%;
   --destructive: 0 100% 35%;
   --border: 220 20% 60%;
-  --band-compliant: 152 80% 22%;
-  --band-at-risk: 25 100% 25%;
-  --band-non-compliant: 16 100% 30%;
-  --band-violating: 0 100% 35%;
   --warning: 20 100% 22%;
 }
 

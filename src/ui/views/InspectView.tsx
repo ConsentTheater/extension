@@ -4,21 +4,22 @@ import { Badge } from '@/ui/components/ui/badge';
 import { Separator } from '@/ui/components/ui/separator';
 import { ScrollArea } from '@/ui/components/ui/scroll-area';
 import { useScanState } from '@/ui/state/ScanContext';
-import { bandForScore, SEVERITY_WEIGHTS } from '@/lib/risk-score';
-import type { BandKey } from '@/lib/risk-score';
-import type { Severity } from '@/lib/tracker-matcher';
+import type { ConsentBurden } from '@/lib/tracker-matcher';
 import type { CapturedCookie, CapturedRequest, Report } from '@/ui/types/messages';
 import { useState } from 'react';
+
+const BURDEN_ORDER: Record<ConsentBurden, number> = {
+  required_strict: 0, required: 1, contested: 2, minimal: 3
+};
 
 interface CompanyGroup {
   company: string;
   categories: Set<string>;
   cookies: CapturedCookie[];
   requests: CapturedRequest[];
-  score: number;
-  band: { key: BandKey; label: string };
-  maxSeverity: Severity;
+  worstBurden: ConsentBurden;
   hasPreConsent: boolean;
+  preConsentCount: number;
 }
 
 function groupByCompany(report: Report): CompanyGroup[] {
@@ -40,27 +41,28 @@ function groupByCompany(report: Report): CompanyGroup[] {
     if (r.category) g.categories.add(r.category);
   }
 
-  const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-
   return Array.from(map.entries())
     .map(([company, { cookies, requests, categories }]) => {
       const allItems = [...cookies, ...requests];
-      const hasPreConsent = allItems.some(i => i.beforeConsent);
+      const preConsentItems = allItems.filter(i => i.beforeConsent);
+      const worstBurden = allItems.reduce<ConsentBurden>((worst, item) => {
+        return BURDEN_ORDER[item.consent_burden] < BURDEN_ORDER[worst] ? item.consent_burden : worst;
+      }, 'minimal');
 
-      // Per-company micro-score: start at 100, deduct per item severity
-      let score = 100;
-      for (const item of allItems.filter(i => i.beforeConsent)) {
-        score -= (SEVERITY_WEIGHTS[item.severity] || 0);
-      }
-      score = Math.max(0, Math.min(100, score));
-
-      const maxSeverity = allItems.reduce<Severity>((worst, item) => {
-        return (SEVERITY_ORDER[item.severity] ?? 3) < (SEVERITY_ORDER[worst] ?? 3) ? item.severity : worst;
-      }, 'low');
-
-      return { company, categories, cookies, requests, score, band: bandForScore(score), maxSeverity, hasPreConsent };
+      return {
+        company, categories, cookies, requests,
+        worstBurden,
+        hasPreConsent: preConsentItems.length > 0,
+        preConsentCount: preConsentItems.length
+      };
     })
-    .sort((a, b) => a.score - b.score); // worst first
+    .sort((a, b) => {
+      // Sort by: pre-consent activity first, then by worst burden, then by name.
+      if (a.hasPreConsent !== b.hasPreConsent) return a.hasPreConsent ? -1 : 1;
+      const burdenDiff = BURDEN_ORDER[a.worstBurden] - BURDEN_ORDER[b.worstBurden];
+      if (burdenDiff !== 0) return burdenDiff;
+      return a.company.localeCompare(b.company);
+    });
 }
 
 export function InspectView() {
@@ -86,7 +88,7 @@ export function InspectView() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MagnifyingGlass size={16} weight="bold" className="text-link" />
-            <h2 className="font-display text-base font-semibold tracking-tight">GDPR Scoreboard</h2>
+            <h2 className="font-display text-base font-semibold tracking-tight">Detected trackers</h2>
           </div>
           {phase === 'monitoring' && (
             <Badge variant="gold" className="text-[9px] animate-pulse">LIVE</Badge>
@@ -146,9 +148,13 @@ function CompanyCard({ group }: { group: CompanyGroup }) {
           <span className="shrink-0 text-[10px] text-muted-foreground truncate">{categoryLabels}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="font-mono text-lg font-bold tabular-nums">{group.score}</span>
-          <Badge variant={group.band.key as 'compliant' | 'at_risk' | 'non_compliant' | 'violating'} className="text-[9px]">
-            {group.band.label}
+          {group.hasPreConsent && (
+            <Badge variant="required_strict" className="text-[8px] h-4 px-1.5">
+              {group.preConsentCount} pre-consent
+            </Badge>
+          )}
+          <Badge variant={group.worstBurden} className="text-[8px] h-4 px-1.5">
+            {group.worstBurden}
           </Badge>
           {expanded ? <CaretUp size={12} className="text-muted-foreground" /> : <CaretDown size={12} className="text-muted-foreground" />}
         </div>
@@ -158,12 +164,12 @@ function CompanyCard({ group }: { group: CompanyGroup }) {
         {/* Chips summary */}
         <div className="flex flex-wrap gap-1">
           {group.cookies.map(c => (
-            <ChipItem key={`c-${c.name}-${c.domain}`} label={c.name} beforeConsent={c.beforeConsent} severity={c.severity} type="cookie" />
+            <ChipItem key={`c-${c.name}-${c.domain}`} label={c.name} beforeConsent={c.beforeConsent} type="cookie" />
           ))}
           {group.requests.filter((r, i, arr) =>
             arr.findIndex(x => x.hostname === r.hostname) === i
           ).map(r => (
-            <ChipItem key={`r-${r.hostname}`} label={r.hostname} beforeConsent={r.beforeConsent} severity={r.severity} type="domain" />
+            <ChipItem key={`r-${r.hostname}`} label={r.hostname} beforeConsent={r.beforeConsent} type="domain" />
           ))}
         </div>
 
@@ -176,7 +182,7 @@ function CompanyCard({ group }: { group: CompanyGroup }) {
                 {group.cookies.map(c => (
                   <DetailRow key={`${c.name}-${c.domain}`}>
                     <div className="flex items-center gap-1.5">
-                      <Badge variant={c.severity} className="text-[8px] h-4 px-1.5">{c.severity}</Badge>
+                      <Badge variant={c.consent_burden} className="text-[8px] h-4 px-1.5">{c.consent_burden}</Badge>
                       <span className="font-mono text-xs font-medium">{c.name}</span>
                       {c.beforeConsent && <span className="text-[9px] text-destructive font-semibold">PRE-CONSENT</span>}
                     </div>
@@ -192,7 +198,7 @@ function CompanyCard({ group }: { group: CompanyGroup }) {
                 {Array.from(new Map(group.requests.map(r => [r.hostname, r])).values()).map(r => (
                   <DetailRow key={r.hostname}>
                     <div className="flex items-center gap-1.5">
-                      <Badge variant={r.severity} className="text-[8px] h-4 px-1.5">{r.severity}</Badge>
+                      <Badge variant={r.consent_burden} className="text-[8px] h-4 px-1.5">{r.consent_burden}</Badge>
                       <span className="font-mono text-xs">{r.hostname}</span>
                       {r.beforeConsent && <span className="text-[9px] text-destructive font-semibold">PRE-CONSENT</span>}
                     </div>
@@ -209,7 +215,7 @@ function CompanyCard({ group }: { group: CompanyGroup }) {
 }
 
 function ChipItem({ label, beforeConsent, type }: {
-  label: string; beforeConsent: boolean; severity: Severity; type: 'cookie' | 'domain';
+  label: string; beforeConsent: boolean; type: 'cookie' | 'domain';
 }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-mono text-[10px] ${

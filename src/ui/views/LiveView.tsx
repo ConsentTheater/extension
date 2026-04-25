@@ -8,6 +8,7 @@ import { ScrollArea } from '@/ui/components/ui/scroll-area';
 import { useLiveCookies } from '@/ui/hooks/useLiveCookies';
 import { browserAPI } from '@/lib/browser-api';
 import type { LiveCookie, LiveTracker, StorageEntry } from '@/ui/types/messages';
+import type { ConsentBurden } from '@/lib/tracker-matcher';
 import { detectSuspiciousPattern, scanJsonValue } from '@/lib/pattern-detector';
 import { UrlBar } from '@/ui/components/scan/UrlBar';
 
@@ -17,7 +18,7 @@ const TRACKER_CATEGORIES = new Set([
 ]);
 const CDN_CATEGORIES = new Set(['functional', 'security', 'consent']);
 
-const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+const BURDEN_ORDER: Record<string, number> = { required_strict: 0, required: 1, contested: 2, minimal: 3 };
 
 function bucketTrackers(trackers: LiveTracker[]): { trackers: LiveTracker[]; cdn: LiveTracker[]; unknown: LiveTracker[] } {
   const out = { trackers: [] as LiveTracker[], cdn: [] as LiveTracker[], unknown: [] as LiveTracker[] };
@@ -28,8 +29,8 @@ function bucketTrackers(trackers: LiveTracker[]): { trackers: LiveTracker[]; cdn
     else out.unknown.push(t); // unknown category → treat as unknown
   }
   const sortByImpact = (a: LiveTracker, b: LiveTracker) => {
-    const sa = SEVERITY_ORDER[a.severity ?? 'low'] ?? 99;
-    const sb = SEVERITY_ORDER[b.severity ?? 'low'] ?? 99;
+    const sa = BURDEN_ORDER[a.consent_burden ?? 'minimal'] ?? 99;
+    const sb = BURDEN_ORDER[b.consent_burden ?? 'minimal'] ?? 99;
     return sa - sb || b.count - a.count || a.hostname.localeCompare(b.hostname);
   };
   const sortByCount = (a: LiveTracker, b: LiveTracker) => b.count - a.count || a.hostname.localeCompare(b.hostname);
@@ -322,7 +323,7 @@ interface DomainGroupData {
   cookies: LiveCookie[];
   isThirdParty: boolean;
   hasKnown: boolean;
-  maxSeverity: string | null;
+  worstBurden: string | null;
 }
 
 function groupByDomain(cookies: LiveCookie[]): DomainGroupData[] {
@@ -338,23 +339,22 @@ function groupByDomain(cookies: LiveCookie[]): DomainGroupData[] {
       const isThirdParty = cookies.some(c => c.isThirdParty);
       const hasKnown = cookies.some(c => c.company);
       const hasSuspected = cookies.some(c => c.suspicionLevel === 'high' || c.suspicionLevel === 'medium');
-      const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
-      // If ANY cookie in the group is suspected, the whole group is at least "high"
-      let maxSeverity = cookies.reduce<string | null>((worst, c) => {
-        if (!c.severity) return worst;
-        if (!worst) return c.severity;
-        return (severityOrder[c.severity] ?? 4) < (severityOrder[worst] ?? 4) ? c.severity : worst;
+      // If ANY cookie in the group is suspected, treat as `required` burden minimum.
+      let worstBurden = cookies.reduce<string | null>((worst, c) => {
+        if (!c.consent_burden) return worst;
+        if (!worst) return c.consent_burden;
+        return (BURDEN_ORDER[c.consent_burden] ?? 4) < (BURDEN_ORDER[worst] ?? 4) ? c.consent_burden : worst;
       }, null);
 
-      if (hasSuspected && (!maxSeverity || severityOrder[maxSeverity] > severityOrder['high'])) {
-        maxSeverity = 'high';
+      if (hasSuspected && (!worstBurden || BURDEN_ORDER[worstBurden] > BURDEN_ORDER['required'])) {
+        worstBurden = 'required';
       }
 
-      return { domain, cookies, isThirdParty, hasKnown, maxSeverity };
+      return { domain, cookies, isThirdParty, hasKnown, worstBurden };
     })
     .sort((a, b) => {
-      // Third-party first, then by severity, then alpha
+      // Third-party first, then by burden, then alpha
       if (a.isThirdParty !== b.isThirdParty) return a.isThirdParty ? -1 : 1;
       return a.domain.localeCompare(b.domain);
     });
@@ -365,8 +365,8 @@ function DomainGroup({ group }: { group: DomainGroupData; pageHostname?: string 
 
   return (
     <Card className={
-      group.maxSeverity === 'critical' ? 'border-l-4 border-l-red-700' :
-      group.maxSeverity === 'high' ? 'border-l-4 border-l-warning' :
+      group.worstBurden === 'required_strict' ? 'border-l-4 border-l-red-700' :
+      group.worstBurden === 'required' ? 'border-l-4 border-l-warning' :
       group.isThirdParty ? 'border-l-4 border-l-neutral-400' : ''
     }>
       <button
@@ -382,9 +382,9 @@ function DomainGroup({ group }: { group: DomainGroupData; pageHostname?: string 
           <span className="text-[10px] text-muted-foreground shrink-0">({group.cookies.length})</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {group.maxSeverity && (
-            <Badge variant={group.maxSeverity as 'critical' | 'high' | 'medium' | 'low'} className="text-[8px] h-4 px-1.5">
-              {group.maxSeverity}
+          {group.worstBurden && (
+            <Badge variant={group.worstBurden as ConsentBurden} className="text-[8px] h-4 px-1.5">
+              {group.worstBurden}
             </Badge>
           )}
           {group.isThirdParty && !group.hasKnown && (
@@ -410,9 +410,9 @@ function CookieRow({ cookie }: { cookie: LiveCookie }) {
     <div className="border-b border-border/50 last:border-0 py-1.5">
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="font-mono text-xs font-medium text-foreground break-all">{cookie.name}</span>
-        {cookie.severity && (
-          <Badge variant={cookie.severity as 'critical' | 'high' | 'medium' | 'low'} className="text-[7px] h-3.5 px-1">
-            {cookie.severity}
+        {cookie.consent_burden && (
+          <Badge variant={cookie.consent_burden as ConsentBurden} className="text-[7px] h-3.5 px-1">
+            {cookie.consent_burden}
           </Badge>
         )}
         {cookie.isThirdParty && !cookie.company && (
@@ -468,7 +468,7 @@ function StorageSection({ title, entries, icon }: { title: string; entries: Stor
           <span className="text-xs font-medium">{title}</span>
           <span className="text-[10px] text-muted-foreground">({entries.length} keys)</span>
           {suspectedCount > 0 && (
-            <Badge variant="high" className="text-[7px] h-3.5 px-1">{suspectedCount} suspected</Badge>
+            <Badge variant="required" className="text-[7px] h-3.5 px-1">{suspectedCount} suspected</Badge>
           )}
         </div>
         {expanded ? <CaretUp size={10} /> : <CaretDown size={10} />}
@@ -560,15 +560,15 @@ function TrackerBucket({ title, tone, icon, items, blurb }: {
 }
 
 function TrackerRow({ tracker }: { tracker: LiveTracker }) {
-  const severity = tracker.severity as 'critical' | 'high' | 'medium' | 'low' | undefined;
+  const burden = tracker.consent_burden as ConsentBurden | undefined;
   return (
     <div className="flex items-start gap-1.5 rounded-sm border-l-2 border-border bg-muted/30 px-2 py-1.5 min-w-0">
       <Globe size={11} weight="regular" className="mt-0.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1 space-y-0.5">
         <div className="flex items-start gap-1.5 flex-wrap">
           <span className="font-mono text-[11px] font-medium break-all min-w-0 flex-1">{tracker.hostname}</span>
-          {severity && (
-            <Badge variant={severity} className="text-[8px] h-3.5 px-1 shrink-0">{severity}</Badge>
+          {burden && (
+            <Badge variant={burden} className="text-[8px] h-3.5 px-1 shrink-0">{burden}</Badge>
           )}
           <span className="font-mono text-[10px] tabular-nums text-muted-foreground shrink-0">
             {tracker.count}×

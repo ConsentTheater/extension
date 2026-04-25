@@ -3,7 +3,7 @@
  *
  * Keep this file the single source of truth — every sender and handler imports from here.
  */
-import type { ScoreResult, ObservedBanner, ObservedCookie, ObservedRequest } from '@/lib/risk-score';
+import type { ObservedBanner, ObservedCookie, ObservedRequest } from '@/lib/observations';
 
 export type ConsentAction = 'accept' | 'reject' | 'manage';
 
@@ -66,7 +66,7 @@ export interface LiveCookie {
   company?: string;
   service?: string;
   category?: string;
-  severity?: string;
+  consent_burden?: string;
   description?: string;
   lifetime?: string;
   docs_url?: string;
@@ -86,7 +86,7 @@ export interface LiveTracker {
   company?: string;
   service?: string;
   category?: string;
-  severity?: string;
+  consent_burden?: string;
   note?: string;
   docs_url?: string;
   /** Which key in the Playbill domains dict matched (e.g. 'hubspot.com' for 'track-eu1.hubspot.com') */
@@ -112,7 +112,7 @@ export interface CapturedRequest extends ObservedRequest {
   beforeConsent: boolean;
 }
 
-export interface Report extends ScoreResult {
+export interface Report {
   stats: {
     preConsentCookies: number;
     preConsentRequests: number;
@@ -122,6 +122,7 @@ export interface Report extends ScoreResult {
     bannerDetected: boolean;
     consentAction: ConsentAction | null;
   };
+  banner: ObservedBanner | null;
   cookies: CapturedCookie[];
   requests: CapturedRequest[];
   origin: string | null;

@@ -35,7 +35,7 @@ import { loadPlaybill } from '@consenttheater/playbill';
 // Injected at build time by scripts/build.js — the @consenttheater/playbill
 // version pinned in the extension's package.json devDependencies.
 declare const __PLAYBILL_VERSION__: string;
-import { computeScore, type ObservedBanner } from '@/lib/risk-score';
+import type { ObservedBanner } from '@/lib/observations';
 import { detectSuspiciousPattern } from '@/lib/pattern-detector';
 import type { ConsentAction } from '@/ui/types/messages';
 
@@ -204,7 +204,7 @@ async function getLiveCookies(tabId: number): Promise<LiveCookiesResponse> {
       company: match?.company,
       service: match?.service,
       category: match?.category,
-      severity: match?.severity,
+      consent_burden: match?.consent_burden,
       description: match?.description,
       lifetime: match?.lifetime,
       docs_url: match?.docs_url,
@@ -249,7 +249,7 @@ function buildLiveTrackers(tabId: number, pageHostname: string, db: TrackerDB): 
       company: match?.company,
       service: match?.service,
       category: match?.category,
-      severity: match?.severity,
+      consent_burden: match?.consent_burden,
       note: match?.note,
       docs_url: match?.docs_url,
       matchedDomain: match?.matchedDomain
@@ -413,7 +413,7 @@ bAPI.webRequest.onBeforeRequest.addListener(
       company: match.company,
       service: match.service,
       category: match.category,
-      severity: match.severity,
+      consent_burden: match.consent_burden,
       note: match.note,
       type: details.type,
       ts: details.timeStamp,
@@ -480,7 +480,7 @@ bAPI.cookies.onChanged.addListener((changeInfo) => {
       company: match.company,
       service: match.service,
       category: match.category,
-      severity: match.severity,
+      consent_burden: match.consent_burden,
       ts: now,
       beforeConsent: !state.consentResolvedAt || now < state.consentResolvedAt
     });
@@ -707,15 +707,7 @@ function buildReport(state: TabState): Report {
   const preReqs = requests.filter(r => r.beforeConsent);
   const leaks = requests.filter(r => r.category === 'data_leak');
 
-  const { score, band, violations } = computeScore({
-    preConsentCookies: preCookies,
-    preConsentRequests: preReqs,
-    dataLeakRequests: leaks,
-    banner: state.banner
-  });
-
   return {
-    score, band, violations,
     stats: {
       preConsentCookies: preCookies.length,
       preConsentRequests: preReqs.length,
@@ -725,6 +717,7 @@ function buildReport(state: TabState): Report {
       bannerDetected: !!state.banner?.detected,
       consentAction: state.consentAction
     },
+    banner: state.banner ?? null,
     cookies, requests,
     origin: state.origin,
     phase: state.phase,
@@ -764,13 +757,12 @@ async function setBadge(tabId: number, text: string, color: string): Promise<voi
 
 async function updateBadgeFromReport(tabId: number, report: Report | null): Promise<void> {
   if (!report) return setBadge(tabId, '', '#6b7280');
-  const colorByBand: Record<string, string> = {
-    compliant: '#16a34a',
-    at_risk: '#eab308',
-    non_compliant: '#f97316',
-    violating: '#dc2626'
-  };
-  await setBadge(tabId, String(report.score), colorByBand[report.band.key] || '#6b7280');
+  const preConsent = report.stats.preConsentCookies + report.stats.preConsentRequests;
+  if (preConsent === 0) {
+    await setBadge(tabId, '✓', '#16a34a');
+    return;
+  }
+  await setBadge(tabId, String(preConsent), '#dc2626');
 }
 
 // =============================================================================

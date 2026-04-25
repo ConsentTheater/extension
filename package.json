@@ -53,7 +53,7 @@
     "release": "npm run clean && npm run validate && npm run build:all && npm run zip:all"
   },
   "devDependencies": {
-    "@consenttheater/playbill": "^0.1.2",
+    "@consenttheater/playbill": "^0.2.0",
     "@phosphor-icons/react": "^2.1.10",
     "@preact/preset-vite": "^2.10.5",
     "@radix-ui/react-scroll-area": "^1.2.10",

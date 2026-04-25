@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+
+This release reframes ConsentTheater around **observation**, not judgement —
+in lockstep with `@consenttheater/playbill` 0.2.0.
+
+#### Site-level verdict removed
+
+The 0–100 compliance score and the "Compliant / At Risk / Non-Compliant /
+Violating" risk bands are gone. Whether a site is compliant overall is a legal
+question for a DPA, a court, or your DPO; the extension does not pretend to be
+a regulator. The Scan view now lists the consent banner shape, the cookies set
+before consent, and the requests fired before consent — the raw facts an
+auditor needs.
+
+#### `severity` → `consent_burden`
+
+Tracker entries no longer carry `critical / high / medium / low` severities.
+The new field is `consent_burden` with values `required_strict / required /
+contested / minimal`, mirroring the Playbill data model. Same hierarchy,
+honester labels.
+
+| Old severity | New consent_burden | Meaning                                          |
+|--------------|--------------------|--------------------------------------------------|
+| `critical`   | `required_strict`  | Cross-site profiling, ad-tech, fingerprinting    |
+| `high`       | `required`         | Standard analytics / marketing                   |
+| `medium`     | `contested`        | Jurisdiction-dependent                           |
+| `low`        | `minimal`          | Functional / security / strictly-necessary       |
+
+### Removed
+- `src/lib/risk-score.ts` and its `computeScore`, `bandForScore`,
+  `SEVERITY_WEIGHTS`, `BANDS`, `Violation`, `ScoreResult` exports.
+- `Verdict.tsx` and `ViolationList.tsx` UI components.
+- `--band-compliant`, `--band-at-risk`, `--band-non-compliant`, `--band-violating`
+  CSS color tokens.
+- The `severity-weighted` toolbar badge — it now shows a green `✓` when nothing
+  fired pre-consent and the pre-consent count in red otherwise.
+
+### Added
+- `src/lib/observations.ts` — minimal observation types (`ObservedCookie`,
+  `ObservedRequest`, `ObservedBanner`) with `consent_burden` fields, no scorer.
+- `Report.banner` field exposing the captured banner shape (Accept/Reject/Manage
+  presence) for the Scan view.
+- Per-company sort: pre-consent activity first, then by worst burden, then by
+  name — so the entries that matter for an audit float to the top.
+
 ### Fixed
 - Removed the unsupported `background.service_worker` key from the Firefox manifest.
   Firefox MV3 uses `background.scripts` only, and the stray key produced an AMO

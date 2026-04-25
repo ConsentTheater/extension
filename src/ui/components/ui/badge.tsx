@@ -12,16 +12,11 @@ const badgeVariants = cva(
         destructive: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
         outline: 'text-foreground',
         gold: 'border-transparent bg-accent text-accent-foreground',
-        // Risk bands — EU-palette aligned
-        compliant: 'border-transparent bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200',
-        at_risk: 'border-transparent bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
-        non_compliant: 'border-transparent bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200',
-        violating: 'border-transparent bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200',
-        // Severities
-        critical: 'border-transparent bg-red-50 text-red-800 uppercase dark:bg-red-950 dark:text-red-200',
-        high: 'border-transparent bg-orange-50 text-orange-800 uppercase dark:bg-orange-950 dark:text-orange-200',
-        medium: 'border-transparent bg-amber-50 text-amber-800 uppercase dark:bg-amber-950 dark:text-amber-200',
-        low: 'border-transparent bg-slate-100 text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300'
+        // Consent burden — what the tracker requires under GDPR/ePrivacy
+        required_strict: 'border-transparent bg-red-50 text-red-800 uppercase dark:bg-red-950 dark:text-red-200',
+        required: 'border-transparent bg-orange-50 text-orange-800 uppercase dark:bg-orange-950 dark:text-orange-200',
+        contested: 'border-transparent bg-amber-50 text-amber-800 uppercase dark:bg-amber-950 dark:text-amber-200',
+        minimal: 'border-transparent bg-slate-100 text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300'
       }
     },
     defaultVariants: { variant: 'default' }

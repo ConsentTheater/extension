@@ -1,8 +1,13 @@
 /**
  * Tracker-DB matching — pure functions. Used by the background (request/cookie pipeline)
  * and by tests. No browser API access here.
+ *
+ * Types mirror @consenttheater/playbill 0.2.x. We keep a local copy of the matchers
+ * so we can carry small semantic adjustments (notably, exact-domain matches set
+ * matchedDomain to the host itself for downstream display consistency).
  */
-export type Severity = 'critical' | 'high' | 'medium' | 'low';
+export type ConsentBurden = 'required_strict' | 'required' | 'contested' | 'minimal';
+
 export type Category =
   | 'advertising' | 'analytics' | 'marketing' | 'functional'
   | 'tag_manager' | 'data_leak' | 'social' | 'session_recording'
@@ -13,7 +18,7 @@ export interface CookieSignature {
   service: string;
   category: Category;
   description?: string;
-  severity: Severity;
+  consent_burden: ConsentBurden;
   pattern?: boolean;
   note?: string;
   lifetime?: string;
@@ -24,7 +29,7 @@ export interface DomainSignature {
   company: string;
   service: string;
   category: Category;
-  severity: Severity;
+  consent_burden: ConsentBurden;
   note?: string;
   lifetime?: string;
   docs_url?: string;

@@ -4,12 +4,23 @@ import { Card, CardContent } from '@/ui/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/ui/components/ui/alert';
 import { ScrollArea } from '@/ui/components/ui/scroll-area';
 import { Skeleton } from '@/ui/components/ui/skeleton';
-import { Verdict } from '@/ui/components/scan/Verdict';
+import { Badge } from '@/ui/components/ui/badge';
 import { Stats } from '@/ui/components/scan/Stats';
-import { ViolationList } from '@/ui/components/scan/ViolationList';
 import { useScanState } from '@/ui/state/ScanContext';
 import { useState } from 'react';
-import type { Report } from '@/ui/types/messages';
+import type { Report, CapturedCookie, CapturedRequest } from '@/ui/types/messages';
+import type { ConsentBurden } from '@/lib/tracker-matcher';
+
+const BURDEN_ORDER: Record<ConsentBurden, number> = {
+  required_strict: 0, required: 1, contested: 2, minimal: 3
+};
+
+const BURDEN_LABEL: Record<ConsentBurden, string> = {
+  required_strict: 'consent required (strict)',
+  required: 'consent required',
+  contested: 'contested',
+  minimal: 'minimal'
+};
 
 export function TestView() {
   const { status, phase, report, tab, error, runTest } = useScanState();
@@ -124,6 +135,9 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
     }
   };
 
+  const preCookies = report.cookies.filter(c => c.beforeConsent);
+  const preRequests = report.requests.filter(r => r.beforeConsent);
+
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
@@ -134,9 +148,10 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
               <span className="text-xs text-link">Still watching — new trackers pop up here as you use the page</span>
             </div>
           )}
-          <Verdict report={report} />
           <Stats report={report} />
-          <ViolationList violations={report.violations} />
+          <BannerCard report={report} />
+          <ObservedSection title="Cookies set before consent" items={preCookies} kind="cookie" />
+          <ObservedSection title="Requests fired before consent" items={preRequests} kind="request" />
         </div>
       </ScrollArea>
 
@@ -154,6 +169,67 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
   );
 }
 
+function BannerCard({ report }: { report: Report }) {
+  const b = report.banner;
+  if (!b || !b.detected) {
+    return (
+      <Card>
+        <CardContent className="p-3 text-xs">
+          <p className="font-semibold mb-1">Consent banner</p>
+          <p className="text-muted-foreground">No consent banner detected on this page.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <Card>
+      <CardContent className="p-3 text-xs space-y-1">
+        <p className="font-semibold">Consent banner</p>
+        <p className="text-muted-foreground">
+          Accept: {b.hasAcceptButton ? 'yes' : 'no'} · Reject: {b.hasRejectButton ? 'yes' : 'no'} · Manage: {b.hasManageButton ? 'yes' : 'no'}
+        </p>
+        {report.stats.consentAction && (
+          <p className="text-muted-foreground">You clicked: <span className="font-medium text-foreground">{report.stats.consentAction}</span></p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ObservedSection({ title, items, kind }: { title: string; items: (CapturedCookie | CapturedRequest)[]; kind: 'cookie' | 'request' }) {
+  if (items.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-3 text-xs">
+          <p className="font-semibold mb-1">{title}</p>
+          <p className="text-muted-foreground">None observed.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  const sorted = [...items].sort((a, b) => (BURDEN_ORDER[a.consent_burden] ?? 9) - (BURDEN_ORDER[b.consent_burden] ?? 9));
+  return (
+    <Card>
+      <CardContent className="p-3 text-xs">
+        <p className="font-semibold mb-2">{title} <span className="text-muted-foreground font-normal">({items.length})</span></p>
+        <ul className="space-y-1.5">
+          {sorted.map((it, i) => {
+            const label = kind === 'cookie' ? (it as CapturedCookie).name : (it as CapturedRequest).hostname;
+            const sub = it.company ? `${it.company}${it.service ? ' · ' + it.service : ''}` : null;
+            return (
+              <li key={`${kind}-${label}-${i}`} className="flex items-center gap-2">
+                <Badge variant={it.consent_burden} className="h-4 px-1.5 text-[8px] shrink-0">{it.consent_burden}</Badge>
+                <span className="font-mono text-[10px] truncate flex-1" title={label}>{label}</span>
+                {sub && <span className="text-[10px] text-muted-foreground truncate">{sub}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
 function LoadingView() {
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -165,31 +241,35 @@ function LoadingView() {
 }
 
 function formatReport(report: Report, url: string): string {
+  const preCookies = report.cookies.filter(c => c.beforeConsent);
+  const preRequests = report.requests.filter(r => r.beforeConsent);
   const lines = [
-    'ConsentTheater GDPR Report',
+    'ConsentTheater scan report',
     'URL:       ' + url,
     'Generated: ' + new Date().toISOString(),
-    `Verdict:   ${report.band.label} (${report.score}/100)`,
     '',
     'Summary:',
-    `  Cookies before consent:  ${report.stats.preConsentCookies}`,
-    `  Requests before consent: ${report.stats.preConsentRequests}`,
-    `  Data-leak requests:      ${report.stats.dataLeakRequests}`,
-    `  Banner detected:         ${report.stats.bannerDetected ? 'yes' : 'no'}`,
+    `  Cookies before consent:   ${report.stats.preConsentCookies}`,
+    `  Requests before consent:  ${report.stats.preConsentRequests}`,
+    `  Data-leak requests:       ${report.stats.dataLeakRequests}`,
+    `  Banner detected:          ${report.stats.bannerDetected ? 'yes' : 'no'}`,
+    `  Your consent click:       ${report.stats.consentAction || 'none'}`,
     ''
   ];
-  if (report.violations.length === 0) {
-    lines.push('No violations.');
-  } else {
-    lines.push(`Violations (${report.violations.length}):`);
-    report.violations.forEach((v, i) => {
-      lines.push(`  ${i + 1}. [${v.severity.toUpperCase()}] ${v.description}`);
-      if (v.items?.length) {
-        const names = v.items.map(it => it.name || it.hostname).filter(Boolean).join(', ');
-        lines.push('     ' + names);
-      }
+  if (preCookies.length) {
+    lines.push(`Cookies set before consent (${preCookies.length}):`);
+    preCookies.forEach((c, i) => {
+      lines.push(`  ${i + 1}. [${BURDEN_LABEL[c.consent_burden]}] ${c.name}${c.company ? ' — ' + c.company : ''}`);
     });
+    lines.push('');
   }
-  lines.push('', '---', 'ConsentTheater - https://consenttheater.org');
+  if (preRequests.length) {
+    lines.push(`Requests fired before consent (${preRequests.length}):`);
+    preRequests.forEach((r, i) => {
+      lines.push(`  ${i + 1}. [${BURDEN_LABEL[r.consent_burden]}] ${r.hostname}${r.company ? ' — ' + r.company : ''}`);
+    });
+    lines.push('');
+  }
+  lines.push('---', 'ConsentTheater shows what was observed; it does not issue verdicts.', 'https://consenttheater.org');
   return lines.join('\n');
 }

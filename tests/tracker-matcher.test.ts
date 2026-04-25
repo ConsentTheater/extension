@@ -13,7 +13,7 @@ describe('matchCookie', () => {
     const m = matchCookie(db, '_ga');
     expect(m).not.toBeNull();
     expect(m!.company).toBe('Google');
-    expect(m!.severity).toBe('high');
+    expect(m!.consent_burden).toBe('required');
     expect(m!.name).toBe('_ga');
   });
 
@@ -33,9 +33,9 @@ describe('matchCookie', () => {
     expect(matchCookie(db, '')).toBeNull();
   });
 
-  it('matches critical ad cookies', () => {
-    expect(matchCookie(db, '_fbp')!.severity).toBe('critical');
-    expect(matchCookie(db, '_gcl_au')!.severity).toBe('critical');
+  it('matches required_strict ad cookies', () => {
+    expect(matchCookie(db, '_fbp')!.consent_burden).toBe('required_strict');
+    expect(matchCookie(db, '_gcl_au')!.consent_burden).toBe('required_strict');
   });
 });
 
@@ -54,7 +54,7 @@ describe('matchDomain', () => {
   it('matches deep subdomain', () => {
     const m = matchDomain(db, 'stats.g.doubleclick.net');
     expect(m).not.toBeNull();
-    expect(m!.severity).toBe('critical');
+    expect(m!.consent_burden).toBe('required_strict');
   });
 
   it('returns null for unknown host', () => {

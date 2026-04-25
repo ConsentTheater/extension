@@ -2,8 +2,8 @@
 
 [![Version](https://img.shields.io/github/package-json/v/ConsentTheater/extension?color=blue&label=version)](https://github.com/ConsentTheater/extension/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green)](LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Coming_soon-lightgrey?logo=googlechrome&logoColor=white)](#installation)
-[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Coming_soon-lightgrey?logo=firefox&logoColor=white)](#installation)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Pending_review-yellow?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Listed-orange?logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
 [![GitHub stars](https://img.shields.io/github/stars/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/network/members)
 [![GitHub watchers](https://img.shields.io/github/watchers/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/watchers)
@@ -33,8 +33,10 @@ background needed. If you can use a browser, you can use ConsentTheater.
   around your click, so "before you agreed" really means before you agreed.
 - **Live third-party inspector** — always-on view of every cookie, every storage key, and
   every third-party host the current page contacts, bucketed into Trackers / CDN / Unknown.
-- **Plain-language verdict** — Compliant, At Risk, Non-Compliant, Violating. Severity-based,
-  no arbitrary scores.
+- **Plain-language facts, not verdicts** — every tracker is tagged with the consent
+  burden it carries (`required_strict`, `required`, `contested`, `minimal`) and whether
+  it fired before or after the user resolved the banner. ConsentTheater does not pretend
+  to be a regulator.
 - **Shareable report** — one click copies a clean summary you can paste to a friend, a
   support team, or (if you go that far) a regulator.
 - **Privacy by design** — nothing leaves your browser. No server, no telemetry, no accounts.
@@ -65,12 +67,15 @@ background needed. If you can use a browser, you can use ConsentTheater.
 
 ## Installation
 
-### Install from Store (Recommended — coming soon)
+### Install from Store (Recommended)
 
-[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Coming_soon-lightgrey?style=for-the-badge&logo=googlechrome&logoColor=white)](#installation)
-[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Coming_soon-lightgrey?style=for-the-badge&logo=firefox&logoColor=white)](#installation)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Pending_review-yellow?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Listed-orange?style=for-the-badge&logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
 
-Store listings are in preparation. Until they're live, use the manual install below.
+- **Chrome / Edge / Brave / Arc / Opera:** [Chrome Web Store](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc) (listing goes live once Google completes review)
+- **Firefox:** [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
+
+If a listing isn't reachable yet, the manual install below always works.
 
 <details>
 <summary><strong>Manual Installation</strong></summary>
@@ -111,28 +116,30 @@ relies on.
 3. Click **Scan this page**. ConsentTheater clears the site's cookies and stored data for
    you, reloads the page, and watches quietly.
 4. In about six seconds — or the moment you click Accept / Reject on the cookie banner —
-   you'll see the verdict.
+   you'll see the breakdown of what fired before consent.
 5. Hit **Copy report** to share the findings, or **Rescan** to run it again. The **Live**
    tab shows every cookie, every storage entry, and every third-party call in real time.
 
 The sidebar remembers where you are across tabs, so you can hop between sites and pick up
 where you left off.
 
-## The verdict
+## What you see
 
-ConsentTheater doesn't hide behind a single number. Each issue carries a **severity** —
-`critical`, `high`, `medium`, `low` — and the overall band is decided by what was found,
-not by a formula:
+ConsentTheater shows the facts and lets you draw the conclusion. Every cookie set and
+every third-party request observed during the scan is tagged with its **consent
+burden** — what GDPR / ePrivacy says about whether it needs prior consent:
 
-| Band              | What it means                                                             |
-| ----------------- | ------------------------------------------------------------------------- |
-| **Compliant**     | No tracking before consent. Clean audit trail.                            |
-| **At Risk**       | Only low-severity findings (data-leak-shaped things like fonts or CDNs a reviewer could argue either way on). |
-| **Non-Compliant** | Medium or high findings — analytics / marketing tracking firing pre-consent, missing Reject button, dark-pattern banner. |
-| **Violating**     | At least one **critical** finding — ad-tech pixel, cross-site fingerprinter, session-replay recording without consent. A single critical is enough. |
+| Consent burden        | What it means                                                             |
+| --------------------- | ------------------------------------------------------------------------- |
+| **`required_strict`** | Cross-site profiling, ad-tech retargeting, fingerprinting, session replay. Always needs prior, informed, freely-given consent. |
+| **`required`**        | Standard analytics / marketing tracking. Consent required in nearly all interpretations. |
+| **`contested`**       | Tracking-adjacent or jurisdiction-dependent. Some authorities allow under legitimate interest, others require consent. Treat as consent-required by default. |
+| **`minimal`**         | Functional, security, or strictly-necessary. Often exempt from consent requirements. |
 
-A site with one critical is Violating regardless of whatever else it does right. A site with
-a scatter of lows lands in At Risk. The band is a starting point for the auditor, not a grade.
+The same labels are used in the [Playbill catalogue](https://github.com/ConsentTheater/playbill).
+ConsentTheater highlights everything that fired *before* you clicked Accept / Reject — that
+is the real GDPR question, and it is the one you can answer with raw observation. Whether a
+site is compliant overall is a legal call for a DPA, a court, or your DPO.
 
 ## Development
 
@@ -205,7 +212,7 @@ src/
 ├── lib/
 │   ├── browser-api.ts       # chrome/browser shim
 │   ├── tracker-matcher.ts   # cookie + domain matching (pure, unit-tested)
-│   ├── risk-score.ts        # band + violations (pure, unit-tested)
+│   ├── observations.ts      # observation types (cookies / requests / banner)
 │   ├── pattern-detector.ts  # heuristic ID-pattern detection for unknown trackers
 │   └── utils.ts             # cn() and friends
 └── assets/icons/            # 16, 32, 48, 128

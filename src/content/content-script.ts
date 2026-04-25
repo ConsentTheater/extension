@@ -8,7 +8,7 @@
  *   4. On request: clear sessionStorage (browsingData can't do this per-origin)
  */
 import type { ExtensionMessage, StorageEntry } from '@/ui/types/messages';
-import type { ObservedBanner } from '@/lib/risk-score';
+import type { ObservedBanner } from '@/lib/observations';
 
 declare const browser: typeof chrome | undefined;
 const api: typeof chrome = (typeof browser !== 'undefined' && browser?.runtime) ? browser as typeof chrome : chrome;
