@@ -2,8 +2,8 @@
 
 [![Version](https://img.shields.io/github/package-json/v/ConsentTheater/extension?color=blue&label=version)](https://github.com/ConsentTheater/extension/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green)](LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Pending_review-yellow?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
-[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Listed-orange?logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/polanfackgaekglhmgdknmojihbngjkc?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white&color=brightgreen)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
+[![Firefox Add-ons](https://img.shields.io/amo/v/consenttheater?label=Firefox%20Add-ons&logo=firefox&logoColor=white&color=brightgreen)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
 [![GitHub stars](https://img.shields.io/github/stars/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/network/members)
 [![GitHub watchers](https://img.shields.io/github/watchers/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/watchers)
@@ -69,13 +69,13 @@ background needed. If you can use a browser, you can use ConsentTheater.
 
 ### Install from Store (Recommended)
 
-[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Pending_review-yellow?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
-[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Listed-orange?style=for-the-badge&logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/polanfackgaekglhmgdknmojihbngjkc?label=Chrome%20Web%20Store&style=for-the-badge&logo=googlechrome&logoColor=white&color=brightgreen)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
+[![Firefox Add-ons](https://img.shields.io/amo/v/consenttheater?label=Firefox%20Add-ons&style=for-the-badge&logo=firefox&logoColor=white&color=brightgreen)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
 
-- **Chrome / Edge / Brave / Arc / Opera:** [Chrome Web Store](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc) (listing goes live once Google completes review)
-- **Firefox:** [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
+- **Chrome / Edge / Brave / Arc / Opera / Vivaldi:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc).
+- **Firefox:** install from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/).
 
-If a listing isn't reachable yet, the manual install below always works.
+Prefer to build it yourself? The manual install below works too.
 
 <details>
 <summary><strong>Manual Installation</strong></summary>
