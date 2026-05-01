@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Cookie, Database, CaretDown, CaretUp, Warning, ShieldCheck, Globe, Trash, Flask, ArrowClockwise, GearSix, Broadcast, Question, Cloud, FilePdf, FileCode, ClipboardText } from '@phosphor-icons/react';
+import { useEffect, useRef, useState } from 'react';
+import { Cookie, Database, CaretDown, CaretUp, Warning, ShieldCheck, Globe, Trash, Flask, ArrowClockwise, GearSix, Broadcast, Question, Cloud, FilePdf, FileCode, ClipboardText, X, Info } from '@phosphor-icons/react';
 import { Card, CardContent } from '@/ui/components/ui/card';
 import { Badge } from '@/ui/components/ui/badge';
 import { Button } from '@/ui/components/ui/button';
@@ -59,32 +59,23 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
   const { cookies, trackers, localStorage, sessionStorage, hostname, loading, error, refresh } = useLiveCookies();
   const [clearing, setClearing] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [hasReport, setHasReport] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<{ kind: 'info' | 'warning'; message: string } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track scan state so the export bar appears once the background has captured something.
-  useEffect(() => {
-    let cancelled = false;
-    const check = () => {
-      browserAPI.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const t = tabs?.[0];
-        if (!t?.id) return;
-        browserAPI.runtime.sendMessage({ type: 'getState', tabId: t.id }, (res) => {
-          void browserAPI.runtime.lastError;
-          if (cancelled) return;
-          setHasReport(!!res?.hasReport);
-        });
-      });
-    };
-    check();
-    const listener = (msg: { type?: string }) => {
-      if (msg?.type === 'reportReady' || msg?.type === 'reportUpdated') check();
-    };
-    browserAPI.runtime.onMessage.addListener(listener);
-    return () => {
-      cancelled = true;
-      browserAPI.runtime.onMessage.removeListener(listener);
-    };
+  const showToast = (kind: 'info' | 'warning', message: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ kind, message });
+    toastTimerRef.current = setTimeout(() => setToast(null), 5000);
+  };
+
+  const dismissToast = () => {
+    if (toastTimerRef.current) { clearTimeout(toastTimerRef.current); toastTimerRef.current = null; }
+    setToast(null);
+  };
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
   }, []);
 
   if (loading || testing) {
@@ -152,14 +143,14 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
       });
 
       // Refresh the live cookie/tracker lists periodically while the scan window
-      // is open. The export bar shows up automatically when reportReady arrives.
+      // is open. After the scan window expires, drop the spinner — the export
+      // bar is always rendered, exports pull the latest report on click.
+      setTimeout(() => refresh(), 2000);
+      setTimeout(() => refresh(), 3500);
       setTimeout(() => {
         refresh();
-        setTimeout(() => {
-          refresh();
-          setTimeout(() => { setTesting(false); refresh(); }, 2000);
-        }, 1500);
-      }, 2000);
+        setTesting(false);
+      }, 6500);
     } catch {
       setTesting(false);
     }
@@ -202,7 +193,10 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
         });
       });
       if (!res.har) {
-        console.warn('no HAR available:', res.error);
+        // HAR is only built up while a Test is running — webRequest capture
+        // arms during the scan window. Surface this with an in-sidebar toast
+        // (no native alerts: they look like the page broke).
+        showToast('warning', 'HAR export needs a Test scan first. Click Test to capture network traffic, then try again.');
         return;
       }
       const json = JSON.stringify(res.har, null, 2);
@@ -393,10 +387,36 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
         )}
       </ScrollArea>
 
-      {/* Export bar — appears once a scan has produced a report. */}
-      {hasReport && (
-        <div className="shrink-0 sticky bottom-0 flex flex-wrap gap-2 border-t bg-background p-3">
-          <Button variant="outline" size="sm" onClick={handleCopyReport} className="flex-1 min-w-[5rem] h-8 text-xs">
+      {/* Export bar — always visible, all buttons always enabled. Copy and PDF
+          fall back to a live snapshot (chrome.cookies + tabDomains) when no
+          Test has run; HAR is the only one that strictly needs a scan because
+          webRequest capture only arms during the scan window. */}
+      <div className="shrink-0 sticky bottom-0 border-t bg-background">
+        {/* Toast — sits just above the action buttons, never overlaps page content. */}
+        {toast && (
+          <div className="absolute bottom-full right-2 left-2 mb-2 sm:left-auto sm:max-w-[280px]">
+            <div className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs shadow-md ${
+              toast.kind === 'warning'
+                ? 'border-warning bg-amber-50 text-foreground dark:bg-card'
+                : 'border-link bg-card text-foreground'
+            }`} role="status" aria-live="polite">
+              {toast.kind === 'warning'
+                ? <Warning size={14} weight="fill" className="mt-0.5 shrink-0 text-warning" />
+                : <Info size={14} weight="fill" className="mt-0.5 shrink-0 text-link" />}
+              <span className="flex-1 leading-relaxed">{toast.message}</span>
+              <button
+                type="button"
+                onClick={dismissToast}
+                aria-label="Dismiss"
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <X size={12} weight="bold" />
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2 p-3">
+          <Button variant="outline" size="sm" onClick={handleCopyReport} className="flex-1 min-w-[5rem] h-8 text-xs" title="Copy report JSON to clipboard">
             <ClipboardText size={14} weight="regular" />
             {copied ? 'Copied' : 'Copy'}
           </Button>
@@ -404,12 +424,12 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
             <FilePdf size={14} weight="regular" />
             PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportHar} className="flex-1 min-w-[5rem] h-8 text-xs" title="HTTP Archive 1.2 — opens in Charles, HTTPToolkit, browser DevTools">
+          <Button variant="outline" size="sm" onClick={handleExportHar} className="flex-1 min-w-[5rem] h-8 text-xs" title="HTTP Archive 1.2 — opens in Charles, HTTPToolkit, browser DevTools (requires running Test first)">
             <FileCode size={14} weight="regular" />
             HAR
           </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

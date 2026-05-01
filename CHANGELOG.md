@@ -7,18 +7,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-01
+
+### Highlights
+
+A Firefox-stability + UX-polish release. The 0.2.0 launch surfaced a few
+real-world bugs (toolbar icon doing nothing on Firefox, scan never
+finishing, exports gated behind a clear-and-reload Test) and a couple of
+gaps in the banner detector (shadow DOM, iframe-hosted CMPs, "I do not
+agree" misclassified as Accept). Everything below is driven by reports
+from sites users actually scanned: BBC, Spiegel, Demandbase (Ketch CMP),
+plus the Firefox AMO listing once it went live.
+
+### Added
+
+- **Always-on export bar.** The Copy / PDF / HAR buttons are now visible
+  and clickable from the moment the sidebar opens — no need to run Test
+  first. Copy and PDF fall back to a "live snapshot" built from
+  `chrome.cookies` + the live tracker map for the current tab; HAR still
+  needs a Test (webRequest capture only arms during the scan window) and
+  surfaces an in-sidebar toast when clicked without one. Lets users open
+  the sidebar, click Accept on a banner manually, then export the
+  resulting cookie state.
+- **Live snapshot mode for the PDF report.** When the report is built
+  from live data instead of a Test scan, the PDF page renders a
+  paper-friendly snapshot — single "Cookies on this page" + "Third-party
+  hosts contacted" tables, no before/after-consent split, with an amber
+  callout up top explaining the difference and pointing the user at the
+  Test button for a timeline-based report.
+- **In-sidebar toast component.** Replaces native `alert()` calls with a
+  card-styled message that sits just above the action bar, auto-dismisses
+  after 5 s, can be dismissed manually with `×`, and stays accessible
+  (solid surfaces, no transparency / blur, `role="status"`,
+  `aria-live="polite"`).
+
 ### Fixed
-- Firefox: toolbar icon was a no-op (sidebar wouldn't open) on builds since
-  the HAR export landed. Root cause: the HAR recorder registered
-  `webRequest.onSendHeaders` and `onHeadersReceived` listeners with
-  `'extraHeaders'` in the extraInfoSpec — that flag is Chrome-only, and
-  Firefox throws synchronously on `addListener()` when it sees an unknown
-  spec value, which took the entire background script down before the
+
+- **Firefox toolbar icon was a no-op** on every build that shipped HAR.
+  Root cause: the HAR recorder registered `webRequest.onSendHeaders` /
+  `onHeadersReceived` with `'extraHeaders'` in `extraInfoSpec`, which is
+  a Chrome-only value. Firefox throws synchronously inside
+  `addListener()` when it sees an unknown spec value, which took the
+  whole background script down before the
   `action.onClicked → sidebarAction.toggle()` wiring could register.
-  Both registrations are now wrapped in try/catch with a fallback to the
+  Both registrations are now wrapped in try/catch and fall back to the
   Firefox-compatible spec (no `extraHeaders`). Chrome behaviour is
-  unchanged; Firefox surfaces the same headers it always has — Cookie,
-  Set-Cookie, and Authorization don't need the explicit opt-in there.
+  unchanged; Firefox already surfaces Cookie / Set-Cookie / Authorization
+  in webRequest events without the opt-in.
+- **Firefox scan never reached the export bar.** Even after the toolbar
+  was clickable, clicking Test cleared cookies + reloaded the tab, but
+  the scan finalised silently and the buttons never lit up. Root cause:
+  Firefox fires `tabs.onUpdated` with `changeInfo.url` on same-URL
+  reloads (Chrome only fires it on real URL changes). Our
+  `tabs.onUpdated` handler was clearing per-tab scan state on every
+  url-change event — including the reload triggered by the scan itself.
+  Now we only drop accumulated scan state when the new origin differs
+  from the one we are scanning; same-origin reloads keep the in-flight
+  state intact.
+- **"I do not agree" was classified as Accept.** BBC's Reject button
+  reads "I do not agree", which matched `\bagree\b` in `ACCEPT_RE`.
+  Replaced the three independent regex tests with `classifyButton(text)`
+  — reject > manage > accept precedence with negation patterns
+  (`do/does/don't (not) agree/accept/allow`, `disagree`,
+  "Continue without accepting", "Only essential / Strictly necessary",
+  plus DE / FR / ES / IT / PT variants). Same precedence is used for the
+  click-capture handler, so the recorded consent action now matches what
+  the user actually clicked.
+- **Iframe-hosted CMPs (Sourcepoint, Funding Choices, …)** were
+  invisible to the banner detector — content script only ran on the top
+  frame. Flipped both manifests to `all_frames: true`; storage and
+  clear-all handlers stay top-frame-only via an `isTopFrame` guard at
+  the top of `runtime.onMessage`.
+- **Shadow-DOM-hosted banners** weren't reachable via
+  `document.querySelector`. Added `walkRoots()` / `deepQuery()` /
+  `deepQueryAll()` helpers that recurse into open shadow roots, and use
+  them in both `findBannerBySelectors` and `findBannerByText`. Closed
+  shadow roots remain inaccessible by spec — documented in code, not
+  worked around.
+- **Stricter heuristic fallback for unknown CMPs** — `findBannerByText`
+  now requires (a) candidate ≤ 60 % of viewport height, (b) `position:
+  fixed | sticky` (or `absolute` with a positive z-index), and (c) at
+  least one child button-like element whose own text matches a CTA. Site
+  headers / nav menus that happened to contain "manage" + "privacy" no
+  longer false-trigger as banners; smallest matching candidate wins when
+  several pass.
+
+### Added — banner support
+
+- **Ketch CMP** (used by Demandbase and others). Selectors:
+  `#ketch-purposes-modal`, `#ketch-modal`, `[id^="ketch-"][role="dialog"]`,
+  plus `ketch-modal` / `ketch-purposes` / `ketch-banner` /
+  `ketch-experience` prefixes for `climbToCmpRoot`.
+- More OneTrust child IDs (`#onetrust-consent-sdk`, `#onetrust-pc-sdk`),
+  Cookiebot body container, Usercentrics CMP UI, Didomi host, CookieYes
+  modal, Sourcepoint, TrustArc, Quantcast Choice, Klaro, Termly, Iubenda,
+  Osano. Built off real scans, not guesses.
+
+### Changed
+
+- **`@consenttheater/playbill` 0.2.0 → 0.3.0.** Data-quality release
+  driven by ten end-to-end scans of major B2B SaaS sites. Notable
+  re-attributions: `_dd_s` → Datadog Browser SDK (was DataDome bot
+  protection); `_gd_session` / `_gd_svisitor` / `_gd_visitor` → 6sense
+  Visitor ID (was "Google Analytics Debug"). Tooling: `normalize.js` now
+  reports cross-file collisions and explicitly flags `COMPANY MISMATCH`
+  cases — surfaced 109 cookie + 344 domain collisions as a backlog. API
+  surface unchanged; no extension code changes were required.
+- **No more emoji in the Firefox toolbar title.** Both `action` and
+  `sidebar_action` `default_title` are plain `"ConsentTheater"`, matching
+  the Chrome manifest.
 
 ## [0.2.0] — 2026-04-26
 

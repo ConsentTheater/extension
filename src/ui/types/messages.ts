@@ -113,7 +113,18 @@ export interface CapturedRequest extends ObservedRequest {
   beforeConsent: boolean;
 }
 
+/**
+ * `scan` — produced by a full clear-and-reload Test. Carries the before/after
+ *          consent split timed off the captured banner click.
+ * `live`  — produced on the fly from chrome.cookies + tabDomains when no scan
+ *          has run for this tab. No before/after split; just a snapshot of
+ *          what the live inspector currently sees. Useful when the user wants
+ *          to export cookies/trackers without disturbing the page state.
+ */
+export type ReportMode = 'scan' | 'live';
+
 export interface Report {
+  mode: ReportMode;
   stats: {
     preConsentCookies: number;
     preConsentRequests: number;

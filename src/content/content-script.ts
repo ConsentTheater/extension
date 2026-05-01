@@ -56,6 +56,11 @@ const BANNER_SELECTORS = [
   // Osano
   '.osano-cm-window',
   '.osano-cm-dialog',
+  // Ketch (used by Demandbase, etc.)
+  '#ketch-purposes-modal',
+  '#ketch-modal',
+  '[id^="ketch-"][role="dialog"]',
+  '[id^="ketch-"][role="alertdialog"]',
   // Zest (ConsentTheater own / generic BEM)
   '.zest-banner',
   '.zest-banner__container',
@@ -72,6 +77,7 @@ const CMP_PREFIXES = [
   'onetrust-', 'CybotCookiebot', 'usercentrics-', 'didomi-',
   'cky-', 'sp_message_', 'truste-', 'qc-cmp2-', 'klaro',
   'termly-', 'iubenda-', 'osano-', 'cc-banner', 'cc-window',
+  'ketch-modal', 'ketch-purposes', 'ketch-banner', 'ketch-experience',
   'zest-banner', 'zest-cmp', 'zest-consent'
 ];
 

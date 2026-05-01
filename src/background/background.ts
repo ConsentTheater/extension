@@ -590,10 +590,20 @@ bAPI.tabs.onRemoved.addListener((tabId) => {
 bAPI.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url) {
     const state = tabStates.get(tabId);
-    if (state) {
-      // URL change — everything collected for the previous page is stale.
-      // Drop the report and all accumulated scan data so the sidebar doesn't
-      // keep showing ghost cookies / trackers / banner from the old URL.
+    let newOrigin: string | null = null;
+    try { newOrigin = new URL(changeInfo.url).origin; } catch { /* invalid URL */ }
+
+    // Firefox fires changeInfo.url even on same-URL reload (Chrome only fires
+    // on real URL changes). Without this guard the reload we trigger inside
+    // startTest() would nuke its own state — scanTimer cancelled, phase reset
+    // to idle, finalizeTest never runs, sidebar never sees a report. So we
+    // only drop scan data when the navigation is actually cross-origin.
+    const isSameOriginReload = state?.origin && newOrigin && newOrigin === state.origin;
+
+    if (state && !isSameOriginReload) {
+      // Real cross-origin navigation — drop the report and all accumulated
+      // scan data so the sidebar doesn't keep showing ghost cookies /
+      // trackers / banner from the old URL.
       if (state.scanTimer) { clearTimeout(state.scanTimer); state.scanTimer = null; }
       if (state.updateTimer) { clearTimeout(state.updateTimer); state.updateTimer = null; }
       state.phase = 'idle';
@@ -608,12 +618,12 @@ bAPI.tabs.onUpdated.addListener((tabId, changeInfo) => {
       state.hostname = null;
       state.lastReportItemCount = 0;
       resetHar(state.har);
+      void setBadge(tabId, '', '#6b7280');
+      // Tell the sidebar to resync — its useCurrentTab also triggers on
+      // changeInfo.url, but pushing the signal explicitly avoids the race
+      // where the sidebar queries getState before our clear finishes.
+      pushToSidebar({ type: 'reportUpdated', tabId });
     }
-    void setBadge(tabId, '', '#6b7280');
-    // Tell the sidebar to resync — its useCurrentTab also triggers on
-    // changeInfo.url, but pushing the signal explicitly avoids the race
-    // where the sidebar queries getState before our clear finishes.
-    pushToSidebar({ type: 'reportUpdated', tabId });
   }
   if (changeInfo.status === 'loading') {
     const state = tabStates.get(tabId);
@@ -747,7 +757,15 @@ async function finalizeTest(tabId: number): Promise<void> {
 
 async function getReport(tabId: number): Promise<ReportResponse> {
   const state = tabStates.get(tabId);
-  if (!state) return { report: null };
+
+  // No active scan and no prior report — return a live snapshot built from
+  // chrome.cookies + tabDomains. Lets the user Copy / PDF live data without
+  // ever clicking Test (HAR still requires a Test, since webRequest capture
+  // is only armed during a scan).
+  if (!state || (state.phase === 'idle' && !state.report)) {
+    const live = await buildLiveReport(tabId);
+    return { report: live, phase: state?.phase ?? 'idle' };
+  }
 
   if (state.phase === 'testing' && Date.now() - state.scanStartedAt < SCAN_WINDOW_MS) {
     return { report: null, phase: 'testing' };
@@ -767,6 +785,82 @@ async function getReport(tabId: number): Promise<ReportResponse> {
   }
 
   return { report: state.report, phase: state.phase };
+}
+
+async function buildLiveReport(tabId: number): Promise<Report> {
+  let url: string | null = null;
+  let hostname: string | null = null;
+  let origin: string | null = null;
+  try {
+    const tab = await bAPI.tabs.get(tabId);
+    if (tab?.url && /^https?:/i.test(tab.url)) {
+      const u = new URL(tab.url);
+      url = tab.url;
+      hostname = u.hostname;
+      origin = u.origin;
+    }
+  } catch { /* tab may have been closed */ }
+
+  const cookies: CapturedCookie[] = [];
+  const requests: CapturedRequest[] = [];
+
+  if (url && hostname) {
+    try {
+      const raw = await bAPI.cookies.getAll({ url });
+      for (const c of raw) {
+        const match = matchCookie(trackerDB, c.name);
+        cookies.push({
+          name: c.name,
+          domain: c.domain,
+          company: match?.company,
+          service: match?.service,
+          category: match?.category,
+          consent_burden: match?.consent_burden ?? 'minimal',
+          ts: c.expirationDate ? c.expirationDate * 1000 : Date.now(),
+          beforeConsent: false
+        });
+      }
+    } catch { /* cookies API blocked for this URL */ }
+
+    const counts = tabDomains.get(tabId);
+    if (counts) {
+      for (const [host] of counts) {
+        if (isSameOrSubdomain(host, hostname)) continue;
+        const match = matchDomain(trackerDB, host);
+        if (!match) continue;
+        requests.push({
+          hostname: host,
+          company: match.company,
+          service: match.service,
+          category: match.category,
+          consent_burden: match.consent_burden,
+          note: match.note,
+          beforeConsent: false
+        });
+      }
+    }
+  }
+
+  const leaks = requests.filter(r => r.category === 'data_leak');
+
+  return {
+    mode: 'live',
+    stats: {
+      preConsentCookies: 0,
+      preConsentRequests: 0,
+      dataLeakRequests: leaks.length,
+      totalCookies: cookies.length,
+      totalRequests: requests.length,
+      bannerDetected: false,
+      consentAction: null
+    },
+    banner: null,
+    cookies,
+    requests,
+    origin,
+    phase: 'idle',
+    finishedAt: Date.now()
+  };
 }
 
 interface HarResponse { har: HarLog | null; error?: string }
@@ -806,6 +900,7 @@ function buildReport(state: TabState): Report {
   const leaks = requests.filter(r => r.category === 'data_leak');
 
   return {
+    mode: 'scan',
     stats: {
       preConsentCookies: preCookies.length,
       preConsentRequests: preReqs.length,

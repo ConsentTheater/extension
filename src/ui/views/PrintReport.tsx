@@ -72,30 +72,85 @@ export function PrintReport({ report }: { report: Report }) {
           </dl>
         </header>
 
+        {report.mode === 'live' && (
+          <Section title="Live snapshot" compact>
+            <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 print:bg-amber-50 leading-relaxed">
+              <strong>This is a live snapshot, not a Test scan.</strong> ConsentTheater
+              built this report from the cookies and tracker hosts visible in the page
+              right now — it has no before/after-consent split because no clear-and-reload
+              Test was run. Click <em>Test</em> in the sidebar to capture the
+              timeline-based report (with pre-consent vs post-consent split and a
+              matching HAR network trace).
+            </p>
+          </Section>
+        )}
+
         <Section title="Summary" compact>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat value={report.stats.preConsentCookies} label="Cookies before consent" emphasis={report.stats.preConsentCookies > 0} />
-            <Stat value={report.stats.preConsentRequests} label="Requests before consent" emphasis={report.stats.preConsentRequests > 0} />
-            <Stat value={report.stats.dataLeakRequests} label="Data-leak requests" emphasis={report.stats.dataLeakRequests > 0} />
-            <Stat value={report.stats.totalCookies + report.stats.totalRequests} label="Total observations" />
-          </div>
+          {report.mode === 'scan' ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat value={report.stats.preConsentCookies} label="Cookies before consent" emphasis={report.stats.preConsentCookies > 0} />
+              <Stat value={report.stats.preConsentRequests} label="Requests before consent" emphasis={report.stats.preConsentRequests > 0} />
+              <Stat value={report.stats.dataLeakRequests} label="Data-leak requests" emphasis={report.stats.dataLeakRequests > 0} />
+              <Stat value={report.stats.totalCookies + report.stats.totalRequests} label="Total observations" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <Stat value={report.stats.totalCookies} label="Cookies on this page" />
+              <Stat value={report.stats.totalRequests} label="Third-party hosts" />
+              <Stat value={report.stats.dataLeakRequests} label="Data-leak requests" emphasis={report.stats.dataLeakRequests > 0} />
+            </div>
+          )}
         </Section>
 
-        <Section title="Consent banner" compact>
-          <BannerPanel report={report} />
-        </Section>
+        {report.mode === 'scan' && (
+          <Section title="Consent banner" compact>
+            <BannerPanel report={report} />
+          </Section>
+        )}
 
-        <Section title={`Cookies set before consent (${preCookies.length})`}>
-          {preCookies.length === 0
-            ? <Empty>No cookies were set before the user resolved the consent banner.</Empty>
-            : <CookieTable cookies={preCookies} />}
-        </Section>
+        {report.mode === 'scan' && (
+          <Section title="How to read the next two sections" compact>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Below we list cookies and third-party requests captured{' '}
+              <em>before</em> the consent banner was resolved (or before any user
+              interaction, if no banner appeared). The split is a best-effort
+              timestamp comparison — browsers don't expose a clean "consent state
+              changed" signal, so async, retried, or batched scripts can land on
+              either side of the cut-off. Use this as evidence, not a verdict.
+              For ground-truth network ordering, see the matching HAR export.
+            </p>
+          </Section>
+        )}
 
-        <Section title={`Requests fired before consent (${preRequests.length})`}>
-          {preRequests.length === 0
-            ? <Empty>No third-party requests fired before the user resolved the consent banner.</Empty>
-            : <RequestTable requests={preRequests} />}
-        </Section>
+        {report.mode === 'scan' ? (
+          <>
+            <Section title={`Cookies set before consent (${preCookies.length})`}>
+              {preCookies.length === 0
+                ? <Empty>No cookies were set before the user resolved the consent banner.</Empty>
+                : <CookieTable cookies={preCookies} />}
+            </Section>
+
+            <Section title={`Requests fired before consent (${preRequests.length})`}>
+              {preRequests.length === 0
+                ? <Empty>No third-party requests fired before the user resolved the consent banner.</Empty>
+                : <RequestTable requests={preRequests} />}
+            </Section>
+          </>
+        ) : (
+          <>
+            <Section title={`Cookies on this page (${report.cookies.length})`}>
+              {report.cookies.length === 0
+                ? <Empty>No cookies are currently set on this page.</Empty>
+                : <CookieTable cookies={sortByBurden(report.cookies)} />}
+            </Section>
+
+            <Section title={`Third-party hosts contacted (${dedupRequests(report.requests.filter(r => r.category !== 'data_leak')).length})`}>
+              {report.requests.length === 0
+                ? <Empty>No third-party tracker hosts have been contacted yet.</Empty>
+                : <RequestTable requests={dedupRequests(report.requests.filter(r => r.category !== 'data_leak'))} />}
+            </Section>
+          </>
+        )}
 
         {dataLeaks.length > 0 && (
           <Section title={`Data-leak requests (${dataLeaks.length})`}>
@@ -109,13 +164,13 @@ export function PrintReport({ report }: { report: Report }) {
           </Section>
         )}
 
-        {otherCookies.length > 0 && (
+        {report.mode === 'scan' && otherCookies.length > 0 && (
           <Section title={`Cookies set after consent (${otherCookies.length})`}>
             <CookieTable cookies={otherCookies} />
           </Section>
         )}
 
-        {otherRequests.length > 0 && (
+        {report.mode === 'scan' && otherRequests.length > 0 && (
           <Section title={`Other third-party requests (${otherRequests.length})`}>
             <RequestTable requests={otherRequests} />
           </Section>
@@ -157,6 +212,16 @@ export function PrintReport({ report }: { report: Report }) {
                 <em>before the user clicked Accept / Reject / Manage</em> on the consent banner — or, if no
                 banner was shown, before any user interaction at all. This is the GDPR-relevant moment:
                 tracking that happens before consent generally cannot rely on consent as a legal basis.
+              </p>
+              <p className="mt-2 text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">A caveat on accuracy.</strong> This split is a
+                best-effort timestamp comparison: ConsentTheater records when the user clicked
+                a banner button and tags every captured cookie / request as before or after that
+                moment. Browsers don't expose a clean "consent state changed" signal, so
+                third-party scripts that load asynchronously, retry on consent change, or batch
+                their writes can land on either side of the cut-off depending on timing. Treat
+                the before/after split as informative — useful evidence, not a legal verdict.
+                When in doubt, look at the raw HAR export for ground-truth network ordering.
               </p>
             </div>
           </div>
