@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Firefox: toolbar icon was a no-op (sidebar wouldn't open) on builds since
+  the HAR export landed. Root cause: the HAR recorder registered
+  `webRequest.onSendHeaders` and `onHeadersReceived` listeners with
+  `'extraHeaders'` in the extraInfoSpec — that flag is Chrome-only, and
+  Firefox throws synchronously on `addListener()` when it sees an unknown
+  spec value, which took the entire background script down before the
+  `action.onClicked → sidebarAction.toggle()` wiring could register.
+  Both registrations are now wrapped in try/catch with a fallback to the
+  Firefox-compatible spec (no `extraHeaders`). Chrome behaviour is
+  unchanged; Firefox surfaces the same headers it always has — Cookie,
+  Set-Cookie, and Authorization don't need the explicit opt-in there.
+
 ## [0.2.0] — 2026-04-26
 
 ### Breaking changes

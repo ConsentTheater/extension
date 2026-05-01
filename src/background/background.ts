@@ -440,29 +440,38 @@ bAPI.webRequest.onBeforeRequest.addListener(
 );
 
 // HAR completion pipeline — request headers, response headers, status, IP, errors.
-// Registered with extraInfoSpec so headers actually arrive (security-sensitive
-// headers like Cookie / Set-Cookie / Authorization need 'extraHeaders' explicitly).
+// `extraHeaders` is Chrome-only. Without it Chrome strips Cookie / Set-Cookie /
+// Authorization from webRequest events; with it, Firefox throws synchronously
+// at addListener() time because Firefox's webRequest spec doesn't list that
+// value, taking the whole background script down and breaking the toolbar.
+// Try the Chrome shape first, fall back to the Firefox-compatible one.
 const HEADER_LISTENER_FILTER = { urls: ['<all_urls>'] };
 
-bAPI.webRequest.onSendHeaders.addListener(
-  (details): undefined => {
-    const state = tabStates.get(details.tabId);
-    if (!state || !isCapturing(state)) return;
-    recordRequestHeaders(state.har, details.requestId, details.requestHeaders, details.timeStamp);
-  },
-  HEADER_LISTENER_FILTER,
-  ['requestHeaders', 'extraHeaders']
-);
+const onSendHeadersHandler = (details: chrome.webRequest.OnSendHeadersDetails): undefined => {
+  const state = tabStates.get(details.tabId);
+  if (!state || !isCapturing(state)) return;
+  recordRequestHeaders(state.har, details.requestId, details.requestHeaders, details.timeStamp);
+};
 
-bAPI.webRequest.onHeadersReceived.addListener(
-  (details): undefined => {
-    const state = tabStates.get(details.tabId);
-    if (!state || !isCapturing(state)) return;
-    recordResponseHeaders(state.har, details.requestId, details.statusCode, details.statusLine, details.responseHeaders, details.timeStamp);
-  },
-  HEADER_LISTENER_FILTER,
-  ['responseHeaders', 'extraHeaders']
-);
+try {
+  bAPI.webRequest.onSendHeaders.addListener(onSendHeadersHandler, HEADER_LISTENER_FILTER, ['requestHeaders', 'extraHeaders']);
+} catch (e) {
+  console.warn('webRequest.onSendHeaders: extraHeaders rejected, retrying without:', e);
+  bAPI.webRequest.onSendHeaders.addListener(onSendHeadersHandler, HEADER_LISTENER_FILTER, ['requestHeaders']);
+}
+
+const onHeadersReceivedHandler = (details: chrome.webRequest.OnHeadersReceivedDetails): undefined => {
+  const state = tabStates.get(details.tabId);
+  if (!state || !isCapturing(state)) return;
+  recordResponseHeaders(state.har, details.requestId, details.statusCode, details.statusLine, details.responseHeaders, details.timeStamp);
+};
+
+try {
+  bAPI.webRequest.onHeadersReceived.addListener(onHeadersReceivedHandler, HEADER_LISTENER_FILTER, ['responseHeaders', 'extraHeaders']);
+} catch (e) {
+  console.warn('webRequest.onHeadersReceived: extraHeaders rejected, retrying without:', e);
+  bAPI.webRequest.onHeadersReceived.addListener(onHeadersReceivedHandler, HEADER_LISTENER_FILTER, ['responseHeaders']);
+}
 
 bAPI.webRequest.onResponseStarted.addListener(
   (details): undefined => {
