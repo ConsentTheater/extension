@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ConsentTheater",
   "description": "See what a website is really tracking before you click Accept — in plain language, no tech skills required.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "action": {
     "default_title": "ConsentTheater",
     "default_icon": {

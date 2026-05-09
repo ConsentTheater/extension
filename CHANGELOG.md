@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-09
+
+### Highlights
+
+A data-refresh release. Bumps `@consenttheater/playbill` 0.3.0 → 0.4.0 —
+the same matching API, materially more knowledge underneath. Settings
+now shows **4,028 cookies / 6,085 domains / 2,992 companies (10,113
+unique signatures)** — the size of the in-memory tracker map after
+category merge, which is what the extension actually checks against on
+every scan. No extension code changed beyond version bumps; the Settings
+page reads `playbill.stats` over the wire from the background, so the
+new totals appear automatically the moment the package is rebuilt.
+
+### Changed
+
+- **`@consenttheater/playbill` 0.3.0 → 0.4.0.** Continued data-quality
+  work on top of the cross-file collision report shipped in 0.3.0:
+  remaining `COMPANY MISMATCH` cases narrowed (cookie collisions
+  91, domain collisions 300 — down from 109 / 344 in 0.3.0), broader
+  coverage across advertising / analytics / marketing categories. API
+  surface (`loadPlaybill`, `matchCookie`, `matchDomain`, `Playbill.stats`)
+  unchanged; no extension-side code changes were required.
+- **Dev-dependency refresh.** Patch / minor bumps for
+  `tailwindcss` 4.2 → 4.3, `@tailwindcss/vite` 4.2 → 4.3,
+  `vite` 8.0.10 → 8.0.11, `eslint` 10.2 → 10.3,
+  `typescript-eslint` 8.59.0 → 8.59.2, `addons-linter` 10.3 → 10.4,
+  `postcss` 8.5.10 → 8.5.14, `fs-extra` 11.3.4 → 11.3.5,
+  `@types/chrome` 0.1.40 → 0.1.42, `@types/node` 25.6.0 → 25.6.2,
+  plus `archiver` 7 → 8 (release-zip script only — output format
+  unchanged). No runtime impact on the shipped extension.
+
+### Notes
+
+- The number of merged signatures (10,113) is smaller than the raw
+  per-category total reported by Playbill's own README (~10,500), because
+  some keys (e.g. cookie `OTZ`, domain `bitbucket.org`) are categorised
+  in two actor files and `loadPlaybill` does last-write-wins on merge.
+  Settings shows the merged figure on purpose — that's what the matcher
+  actually consults at runtime.
+
 ## [0.3.0] — 2026-05-01
 
 ### Highlights
