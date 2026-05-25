@@ -74,7 +74,7 @@
     "eslint-plugin-security": "^4.0.0",
     "fs-extra": "^11.3.5",
     "postcss": "^8.5.14",
-    "preact": "^10.29.1",
+    "preact": "^10.29.2",
     "sharp": "^0.34.5",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
