@@ -24,7 +24,7 @@ jobs:
     # .github/workflows/ — without this, the bot would close canonical issues.
     if: ${{ github.server_url == 'https://github.com' }}
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         with:
           script: |
             const codeberg = 'https://codeberg.org/ConsentTheater/extension';
