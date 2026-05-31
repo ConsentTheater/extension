@@ -9,6 +9,14 @@
 [![GitHub watchers](https://img.shields.io/github/watchers/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/watchers)
 [![Powered by Playbill](https://img.shields.io/npm/v/@consenttheater/playbill?label=Playbill&color=4B8BBE)](https://github.com/ConsentTheater/playbill)
 
+> [!IMPORTANT]
+> **Active development lives on [Codeberg](https://codeberg.org/ConsentTheater/extension).**
+> The GitHub copy is a public mirror and isn't monitored for contributions.
+>
+> Please open issues, pull requests, questions and proposals on
+> [Codeberg](https://codeberg.org/ConsentTheater/website/extension).
+> Anything filed on the GitHub mirror is closed automatically.
+
 **See what a website is really doing before you click Accept.**
 
 Cookie banners are full of small print. ConsentTheater pulls back the curtain: open the sidebar,
