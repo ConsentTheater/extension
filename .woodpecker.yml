@@ -1,0 +1,35 @@
+when:
+  - event: [push, pull_request]
+    branch: main
+
+steps:
+  - name: install
+    image: node:24
+    commands:
+      - npm ci
+
+  - name: lint
+    image: node:24
+    commands:
+      - npm run lint
+
+  - name: typecheck
+    image: node:24
+    commands:
+      - npm run typecheck
+
+  - name: test
+    image: node:24
+    commands:
+      - npm test
+
+  - name: validate
+    image: node:24
+    commands:
+      - npm run validate:chrome
+      - npm run validate:firefox
+
+  - name: build
+    image: node:24
+    commands:
+      - npm run build:all

@@ -1,0 +1,89 @@
+name: Redirect to Codeberg
+
+# Only Action on this mirror: greet new issues/PRs, point to Codeberg, close them.
+
+on:
+  issues:
+    types: [opened, reopened]
+  # pull_request_target, not pull_request: needs the base token to close fork PRs.
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: mirror-redirect-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  redirect:
+    runs-on: ubuntu-latest
+    # This file is mirrored to Codeberg, where Forgejo Actions also reads
+    # .github/workflows/ — without this, the bot would close canonical issues.
+    if: ${{ github.server_url == 'https://github.com' }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const codeberg = 'https://codeberg.org/ConsentTheater/extension';
+            const isPR = Boolean(context.payload.pull_request);
+            const number = isPR
+              ? context.payload.pull_request.number
+              : context.payload.issue.number;
+
+            const body = isPR
+              ? [
+                  'Thanks for the contribution! 🙏',
+                  '',
+                  '**This GitHub repository is a read-only mirror.** Active development lives on',
+                  `Codeberg, and pull requests opened here aren't reviewed or merged.`,
+                  '',
+                  `Please re-open your pull request against the canonical repository:`,
+                  `👉 ${codeberg}`,
+                  '',
+                  '_Closing automatically. This is not a comment on your change — it just needs to land on Codeberg._',
+                ].join('\n')
+              : [
+                  'Thanks for filing this! 🙏',
+                  '',
+                  '**This GitHub repository is a read-only mirror.** Active development lives on',
+                  `Codeberg, and issues opened here aren't monitored.`,
+                  '',
+                  `Please re-file your issue on the canonical tracker:`,
+                  `👉 ${codeberg}/issues/new/choose`,
+                  '',
+                  '_Closing automatically so it doesn\'t get lost on the mirror._',
+                ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body,
+            });
+
+            if (isPR) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: number,
+                state: 'closed',
+              });
+            } else {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: number,
+                state: 'closed',
+                state_reason: 'not_planned',
+              });
+            }
+
+            await github.rest.issues.lock({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              lock_reason: 'off-topic',
+            });
