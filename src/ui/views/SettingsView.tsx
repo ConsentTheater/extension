@@ -59,7 +59,7 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
                 </div>
               </div>
               <p className="mt-2 text-center text-[10px] text-muted-foreground">
-                <a href="https://github.com/ConsentTheater/playbill" target="_blank" rel="noopener" className="text-link hover:underline">v{dbStats?.packageVersion ?? '…'}</a>
+                <a href="https://codeberg.org/ConsentTheater/playbill" target="_blank" rel="noopener" className="text-link hover:underline">v{dbStats?.packageVersion ?? '…'}</a>
                 {' · '}{fmt(dbStats?.companies)} companies · AGPL-3.0
               </p>
             </CardContent>
@@ -156,7 +156,7 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
             <p>
               <a href="https://consenttheater.org?utm_source=extension" target="_blank" rel="noopener" className="text-link hover:underline">consenttheater.org</a>
               {' · '}
-              <a href="https://github.com/ConsentTheater/extension" target="_blank" rel="noopener" className="text-link hover:underline">GitHub</a>
+              <a href="https://codeberg.org/ConsentTheater/extension" target="_blank" rel="noopener" className="text-link hover:underline">Codeberg</a>
             </p>
             <p className="text-[10px]">See what websites are really tracking — in plain language. Powered by Playbill, the world's largest open-source tracker knowledge base.</p>
           </div>

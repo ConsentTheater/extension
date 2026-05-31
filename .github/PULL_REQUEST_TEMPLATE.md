@@ -31,7 +31,7 @@ If anything doesn't apply, leave it unchecked or delete the line.
 ## Tracker catalogue changes
 
 Tracker data (cookies, domains, companies) lives in
-[`@consenttheater/playbill`](https://github.com/ConsentTheater/playbill),
+[`@consenttheater/playbill`](https://codeberg.org/ConsentTheater/playbill),
 **not in this repo**. If the change is about a specific tracker being
 missed or misclassified, open the PR there.
 

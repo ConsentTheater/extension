@@ -11,7 +11,7 @@ body:
         passive analysis on every page visit. Suggestions that require
         always-on background scanning will probably be declined.
         Tracker catalogue changes live in
-        [ConsentTheater/playbill](https://github.com/ConsentTheater/playbill),
+        [ConsentTheater/playbill](https://codeberg.org/ConsentTheater/playbill),
         not here.
 
   - type: textarea

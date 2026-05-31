@@ -10,11 +10,11 @@
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ConsentTheater/extension.git"
+    "url": "git+https://codeberg.org/ConsentTheater/extension.git"
   },
   "homepage": "https://consenttheater.org",
   "bugs": {
-    "url": "https://github.com/ConsentTheater/extension/issues"
+    "url": "https://codeberg.org/ConsentTheater/extension/issues"
   },
   "keywords": [
     "gdpr",

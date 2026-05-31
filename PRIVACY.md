@@ -66,7 +66,7 @@ The extension performs **zero** outbound network requests to ConsentTheater or
 any third party during normal use.
 
 The only bundled remote resource is the tracker catalogue
-([`@consenttheater/playbill`](https://github.com/ConsentTheater/playbill)),
+([`@consenttheater/playbill`](https://codeberg.org/ConsentTheater/playbill)),
 which is **bundled into the extension at build time**. No runtime fetch, no
 CDN call, no update check initiated by the extension. Catalogue updates ship
 through normal browser extension updates (Chrome Web Store, Firefox AMO).
@@ -109,9 +109,9 @@ click **Scan this page**. This is a deliberate product decision:
 
 The full source code, manifest, and build pipeline are published under
 **AGPL-3.0-or-later** at
-[github.com/ConsentTheater/extension](https://github.com/ConsentTheater/extension).
+[codeberg.org/ConsentTheater/extension](https://codeberg.org/ConsentTheater/extension).
 The tracker catalogue is published separately under the same license at
-[github.com/ConsentTheater/playbill](https://github.com/ConsentTheater/playbill).
+[codeberg.org/ConsentTheater/playbill](https://codeberg.org/ConsentTheater/playbill).
 You can verify every claim in this document by reading the code.
 
 ## Children
@@ -123,11 +123,11 @@ including children.
 ## Changes to this policy
 
 Substantive changes to this policy will be noted in the extension's
-[CHANGELOG](https://github.com/ConsentTheater/extension/releases) and in
+[CHANGELOG](https://codeberg.org/ConsentTheater/extension/releases) and in
 the commit history of this file.
 
 ## Contact
 
 - Email: **developer@consenttheater.org**
-- Issues: [github.com/ConsentTheater/extension/issues](https://github.com/ConsentTheater/extension/issues)
+- Issues: [codeberg.org/ConsentTheater/extension/issues](https://codeberg.org/ConsentTheater/extension/issues)
 - Website: [consenttheater.org](https://consenttheater.org)

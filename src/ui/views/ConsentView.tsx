@@ -71,12 +71,12 @@ export function ConsentView({ onAccept }: { onAccept: () => void }) {
                     ConsentTheater is free software under the AGPL-3.0 license. Every line of code is public and anyone can read it — we have nothing to hide.
                   </p>
                   <a
-                    href="https://github.com/ConsentTheater/extension"
+                    href="https://codeberg.org/ConsentTheater/extension"
                     target="_blank"
                     rel="noopener"
                     className="inline-block mt-1 text-[11px] text-link hover:underline"
                   >
-                    View source on GitHub →
+                    View source on Codeberg →
                   </a>
                 </div>
               </div>

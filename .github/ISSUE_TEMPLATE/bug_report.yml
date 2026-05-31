@@ -10,7 +10,7 @@ body:
         **If the issue is about a specific tracker being missed, misnamed, or
         misclassified** (wrong company, wrong category, wrong severity), the
         tracker catalogue lives in a separate repository —
-        [ConsentTheater/playbill](https://github.com/ConsentTheater/playbill).
+        [ConsentTheater/playbill](https://codeberg.org/ConsentTheater/playbill).
         Please file catalogue corrections there.
 
   - type: textarea

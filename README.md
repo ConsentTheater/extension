@@ -1,20 +1,17 @@
 # ConsentTheater
 
-[![Version](https://img.shields.io/github/package-json/v/ConsentTheater/extension?color=blue&label=version)](https://github.com/ConsentTheater/extension/releases)
+[![Version](https://img.shields.io/gitea/v/release/ConsentTheater/extension?gitea_url=https%3A%2F%2Fcodeberg.org&color=blue&label=version)](https://codeberg.org/ConsentTheater/extension/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/polanfackgaekglhmgdknmojihbngjkc?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white&color=brightgreen)](https://chromewebstore.google.com/detail/consenttheater/polanfackgaekglhmgdknmojihbngjkc)
 [![Firefox Add-ons](https://img.shields.io/amo/v/consenttheater?label=Firefox%20Add-ons&logo=firefox&logoColor=white&color=brightgreen)](https://addons.mozilla.org/en-US/firefox/addon/consenttheater/)
-[![GitHub stars](https://img.shields.io/github/stars/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/network/members)
-[![GitHub watchers](https://img.shields.io/github/watchers/ConsentTheater/extension)](https://github.com/ConsentTheater/extension/watchers)
-[![Powered by Playbill](https://img.shields.io/npm/v/@consenttheater/playbill?label=Playbill&color=4B8BBE)](https://github.com/ConsentTheater/playbill)
+[![Powered by Playbill](https://img.shields.io/npm/v/@consenttheater/playbill?label=Playbill&color=4B8BBE)](https://codeberg.org/ConsentTheater/playbill)
 
 > [!IMPORTANT]
 > **Active development lives on [Codeberg](https://codeberg.org/ConsentTheater/extension).**
 > The GitHub copy is a public mirror and isn't monitored for contributions.
 >
 > Please open issues, pull requests, questions and proposals on
-> [Codeberg](https://codeberg.org/ConsentTheater/website/extension).
+> [Codeberg](https://codeberg.org/ConsentTheater/extension/issues).
 > Anything filed on the GitHub mirror is closed automatically.
 
 **See what a website is really doing before you click Accept.**
@@ -144,7 +141,7 @@ burden** — what GDPR / ePrivacy says about whether it needs prior consent:
 | **`contested`**       | Tracking-adjacent or jurisdiction-dependent. Some authorities allow under legitimate interest, others require consent. Treat as consent-required by default. |
 | **`minimal`**         | Functional, security, or strictly-necessary. Often exempt from consent requirements. |
 
-The same labels are used in the [Playbill catalogue](https://github.com/ConsentTheater/playbill).
+The same labels are used in the [Playbill catalogue](https://codeberg.org/ConsentTheater/playbill).
 ConsentTheater highlights everything that fired *before* you clicked Accept / Reject — that
 is the real GDPR question, and it is the one you can answer with raw observation. Whether a
 site is compliant overall is a legal call for a DPA, a court, or your DPO.
@@ -226,7 +223,7 @@ src/
 └── assets/icons/            # 16, 32, 48, 128
 ```
 
-Tracker signatures come from **[@consenttheater/playbill](https://github.com/ConsentTheater/playbill)**
+Tracker signatures come from **[@consenttheater/playbill](https://codeberg.org/ConsentTheater/playbill)**
 as an npm dependency — bundled into `background.js` at build time. The DB isn't vendored into
 this repo; to update tracker coverage, bump the Playbill version.
 
@@ -258,7 +255,7 @@ Runtime messages between sidebar, content script and background. Single source o
 
 ### Reporting bugs
 
-Found a bug? [Open an issue](https://github.com/ConsentTheater/extension/issues/new) with:
+Found a bug? [Open an issue](https://codeberg.org/ConsentTheater/extension/issues/new) with:
 
 - Browser + version
 - Extension version (from Settings)
@@ -268,12 +265,12 @@ Found a bug? [Open an issue](https://github.com/ConsentTheater/extension/issues/
 
 ### Suggesting features
 
-[Submit a feature request](https://github.com/ConsentTheater/extension/issues/new) describing
+[Submit a feature request](https://codeberg.org/ConsentTheater/extension/issues/new) describing
 the problem you're trying to solve, your proposed solution, and any alternatives considered.
 
 ### Adding trackers to the Playbill
 
-Tracker signatures live in the separate **[Playbill](https://github.com/ConsentTheater/playbill)**
+Tracker signatures live in the separate **[Playbill](https://codeberg.org/ConsentTheater/playbill)**
 repo. If you find a tracker we miss, open a PR there — it's a JSON edit in the relevant actor
 category. The extension picks up new entries on the next `npm install @consenttheater/playbill`
 bump.
@@ -295,7 +292,7 @@ machine are the ones the website itself would have made anyway — we just watch
 
 ## Changelog
 
-See [GitHub Releases](https://github.com/ConsentTheater/extension/releases) for version
+See [Codeberg Releases](https://codeberg.org/ConsentTheater/extension/releases) for version
 history and what changed in each build.
 
 ## License

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Source links in the extension UI now point to Codeberg — active
+  development moved there; GitHub is a read-only mirror.
+- Minimum Node version for building from source raised to 24.
+
 ## [0.4.0] — 2026-05-09
 
 ### Highlights
@@ -301,5 +307,5 @@ Initial public release.
   from Preact's runtime implementation of `dangerouslySetInnerHTML` and does
   not reflect user-controlled input.
 
-[Unreleased]: https://github.com/ConsentTheater/extension/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/ConsentTheater/extension/releases/tag/v0.1.0
+[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.1.0...HEAD
+[0.1.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.1.0
