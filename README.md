@@ -153,7 +153,7 @@ site is compliant overall is a legal call for a DPA, a court, or your DPO.
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24+
 - A Chromium-based browser for testing (Chrome, Edge, or Brave) and/or Firefox
 
 ### Setup
