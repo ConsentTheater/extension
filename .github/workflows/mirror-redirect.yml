@@ -20,8 +20,8 @@ concurrency:
 jobs:
   redirect:
     runs-on: ubuntu-latest
-    # This file is mirrored to Codeberg, where Forgejo Actions also reads
-    # .github/workflows/ — without this, the bot would close canonical issues.
+    # Forgejo ignores .github/workflows/ while .forgejo/workflows/ exists, so this
+    # only runs on GitHub. The guard keeps that true if .forgejo/ is ever removed.
     if: ${{ github.server_url == 'https://github.com' }}
     steps:
       - uses: actions/github-script@v9

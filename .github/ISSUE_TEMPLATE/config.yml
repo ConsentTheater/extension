@@ -1,14 +1,7 @@
+# GitHub mirror only — the real forms live in .forgejo/ISSUE_TEMPLATE/ (Codeberg).
+# One link, everything points to Codeberg; issues opened here are auto-closed.
 blank_issues_enabled: false
 contact_links:
-  - name: ⭐ File issues & pull requests on Codeberg (this GitHub repo is a mirror)
+  - name: ⭐ Open an issue or pull request on Codeberg
     url: https://codeberg.org/ConsentTheater/extension/issues/new/choose
-    about: Active development lives on Codeberg. Anything opened on the GitHub mirror is closed automatically — please file it here instead.
-  - name: Tracker catalogue correction (wrong company, missing domain, wrong severity)
-    url: https://codeberg.org/ConsentTheater/playbill/issues/new/choose
-    about: Tracker data lives in the Playbill repo, not in the extension.
-  - name: Website or consenttheater.org bug
-    url: https://codeberg.org/ConsentTheater/website/issues/new/choose
-    about: Issues with the public website belong in the website repository.
-  - name: Privacy or security concerns
-    url: https://consenttheater.org/privacy/
-    about: For privacy or security concerns, see the privacy page or email developer@consenttheater.org.
+    about: This GitHub repo is a read-only mirror. Active development lives on Codeberg — please open it there.
