@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Settings now shows the *installed* Playbill version, not the declared
+  range.** The build injected `__PLAYBILL_VERSION__` from the `^x.y.z`
+  range in `devDependencies` (with `^` stripped), so the version froze at
+  the range floor even after npm resolved a newer in-range build into
+  `node_modules`. `build.js` now reads the version straight from the
+  installed package's own `package.json`, so it always reflects what's
+  actually bundled.
+
 ## [0.5.0] — 2026-06-07
 
 ### Highlights

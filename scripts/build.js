@@ -24,11 +24,14 @@ const SRC_DIR = path.join(ROOT_DIR, 'src');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const SHARED_DIR = path.join(DIST_DIR, '.shared');
 
-// Resolve the installed Playbill version from our own package.json so SettingsView
-// can show it instead of the extension's manifest version. Strips ^ / ~.
+// Read the *installed* Playbill version from its own package.json — not the
+// declared range in our devDependencies, which freezes SettingsView at the
+// range floor (e.g. "0.5.0") even after npm resolves a newer in-range build.
 const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf-8'));
-const PLAYBILL_VERSION = (pkgJson.devDependencies?.['@consenttheater/playbill'] ?? '')
-  .replace(/^[~^]/, '');
+const playbillPkg = JSON.parse(
+  fs.readFileSync(path.join(ROOT_DIR, 'node_modules/@consenttheater/playbill/package.json'), 'utf-8')
+);
+const PLAYBILL_VERSION = playbillPkg.version || '0.0.0';
 const EXTENSION_VERSION = pkgJson.version || '0.0.0';
 
 const args = process.argv.slice(2);
