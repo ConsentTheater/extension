@@ -7,11 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-06-07
+
+### Highlights
+
+A data-refresh release. Bumps `@consenttheater/playbill` 0.4.0 → 0.5.0 —
+the same matching API, materially more knowledge underneath. Settings
+now shows **4,064 cookies / 6,087 domains / 2,998 companies (10,151
+unique signatures)** — the size of the in-memory tracker map after
+category merge, which is what the extension actually checks against on
+every scan. No extension code changed beyond version bumps; the Settings
+page reads `playbill.stats` over the wire from the background, so the
+new totals appear automatically the moment the package is rebuilt.
+
 ### Changed
 
+- **`@consenttheater/playbill` 0.4.0 → 0.5.0.** Continued data-quality
+  work and broader coverage across the catalogue: merged signatures grow
+  from 10,113 → 10,151 (cookies 4,028 → 4,064, domains 6,085 → 6,087,
+  companies 2,992 → 2,998). API surface (`loadPlaybill`, `matchCookie`,
+  `matchDomain`, `Playbill.stats`) unchanged; no extension-side code
+  changes were required.
+- **Dev-dependency refresh.** Patch / minor bumps for
+  `@radix-ui/react-*`, `@types/chrome` 0.1.42 → 0.1.43,
+  `@types/node` 25.9.1 → 25.9.2, `typescript-eslint` 8.60.0 → 8.60.1,
+  `vite` 8.0.14 → 8.0.16, `vitest` / `@vitest/ui` 4.1.7 → 4.1.8. No
+  runtime impact on the shipped extension.
 - Source links in the extension UI now point to Codeberg — active
   development moved there; GitHub is a read-only mirror.
 - Minimum Node version for building from source raised to 24.
+
+### Notes
+
+- The number of merged signatures (10,151) is smaller than the raw
+  per-category total reported by Playbill's own README (~10,550), because
+  some keys are categorised in two actor files and `loadPlaybill` does
+  last-write-wins on merge. Settings shows the merged figure on purpose —
+  that's what the matcher actually consults at runtime.
 
 ## [0.4.0] — 2026-05-09
 
