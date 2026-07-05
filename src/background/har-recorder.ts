@@ -189,7 +189,7 @@ export function recordError(
  */
 export function buildHar(
   state: HarRecorderState,
-  meta: { extensionVersion: string; browserName: string; browserVersion: string }
+  meta: { extensionVersion: string; browserName: string; browserVersion: string; playbillVersion: string }
 ): HarLog {
   const pageId = 'page_1';
   const pageStart = state.page?.startedDateTime || new Date().toISOString();
@@ -201,7 +201,7 @@ export function buildHar(
       creator: {
         name: 'ConsentTheater',
         version: meta.extensionVersion,
-        comment: 'https://consenttheater.org — bodies are not captured (browser-extension API limit)'
+        comment: `https://consenttheater.org — bodies are not captured (browser-extension API limit). Tracker classification: @consenttheater/playbill v${meta.playbillVersion} (https://codeberg.org/ConsentTheater/playbill)`
       },
       browser: { name: meta.browserName, version: meta.browserVersion },
       pages: [{

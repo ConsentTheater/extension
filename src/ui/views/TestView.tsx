@@ -323,5 +323,8 @@ function formatReport(report: Report, url: string): string {
     lines.push('');
   }
   lines.push('---', 'ConsentTheater shows what was observed; it does not issue verdicts.', 'https://consenttheater.org');
+  if (report.playbill) {
+    lines.push(`Playbill v${report.playbill.packageVersion} (schema v${report.playbill.schemaVersion}): ${report.playbill.total.toLocaleString()} entries — ${report.playbill.cookies.toLocaleString()} cookies, ${report.playbill.domains.toLocaleString()} domains, ${report.playbill.companies.toLocaleString()} companies. https://codeberg.org/ConsentTheater/playbill`);
+  }
   return lines.join('\n');
 }

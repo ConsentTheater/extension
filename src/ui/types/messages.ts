@@ -140,6 +140,15 @@ export interface Report {
   origin: string | null;
   phase: TestPhase;
   finishedAt: number;
+  /** Playbill catalogue version + record counts at scan time. */
+  playbill: {
+    packageVersion: string;
+    schemaVersion: number;
+    cookies: number;
+    domains: number;
+    companies: number;
+    total: number;
+  };
 }
 
 export interface StateResponse {

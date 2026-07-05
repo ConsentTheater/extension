@@ -859,7 +859,15 @@ async function buildLiveReport(tabId: number): Promise<Report> {
     requests,
     origin,
     phase: 'idle',
-    finishedAt: Date.now()
+    finishedAt: Date.now(),
+    playbill: {
+      packageVersion: __PLAYBILL_VERSION__,
+      schemaVersion: playbill.version,
+      cookies: playbill.stats.cookies,
+      domains: playbill.stats.domains,
+      companies: playbill.stats.companies,
+      total: playbill.stats.cookies + playbill.stats.domains
+    }
   };
 }
 
@@ -877,7 +885,8 @@ function getHar(tabId: number): HarResponse {
     har: buildHar(state.har, {
       extensionVersion: __EXTENSION_VERSION__,
       browserName,
-      browserVersion: ua
+      browserVersion: ua,
+      playbillVersion: __PLAYBILL_VERSION__
     })
   };
 }
@@ -914,7 +923,15 @@ function buildReport(state: TabState): Report {
     cookies, requests,
     origin: state.origin,
     phase: state.phase,
-    finishedAt: Date.now()
+    finishedAt: Date.now(),
+    playbill: {
+      packageVersion: __PLAYBILL_VERSION__,
+      schemaVersion: playbill.version,
+      cookies: playbill.stats.cookies,
+      domains: playbill.stats.domains,
+      companies: playbill.stats.companies,
+      total: playbill.stats.cookies + playbill.stats.domains
+    }
   };
 }
 
