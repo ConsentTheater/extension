@@ -399,7 +399,7 @@ function LegendItem({ chip, desc }: { chip: ConsentBurden; desc: string }) {
 function BurdenChip({ value }: { value: ConsentBurden }) {
   return (
     <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${BURDEN_BG[value]}`} title={BURDEN_LABEL[value]}>
-      {value.replace('_', ' ')}
+      {value.replace('_', '\u00a0')}
     </span>
   );
 }
