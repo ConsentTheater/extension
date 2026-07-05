@@ -26,6 +26,37 @@ import type {
 } from '@/lib/har-types';
 import type { DomainMatch } from '@/lib/tracker-matcher';
 
+const SENSITIVE_HEADERS = new Set([
+  'cookie',
+  'set-cookie',
+  'authorization',
+  'proxy-authorization',
+  'x-api-key',
+  'x-auth-token',
+  'x-access-token'
+]);
+
+const REDACTED = '[redacted]';
+
+export function sanitizeHarLog(log: HarLog): HarLog {
+  const entries = log.log.entries.map(sanitizeEntry);
+  return { log: { ...log.log, entries } };
+}
+
+function sanitizeEntry(e: HarEntry): HarEntry {
+  return {
+    ...e,
+    request: { ...e.request, headers: redactHeaders(e.request.headers) },
+    response: { ...e.response, headers: redactHeaders(e.response.headers) }
+  };
+}
+
+function redactHeaders(headers: HarHeader[]): HarHeader[] {
+  return headers.map(h =>
+    SENSITIVE_HEADERS.has(h.name.toLowerCase()) ? { ...h, value: REDACTED } : h
+  );
+}
+
 /** A still-in-flight request. We promote it to a finalized HarEntry on completion. */
 interface PartialEntry {
   requestId: string;

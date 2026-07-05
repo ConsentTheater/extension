@@ -6,8 +6,11 @@ import { Button } from '@/ui/components/ui/button';
 import { Separator } from '@/ui/components/ui/separator';
 import { ScrollArea } from '@/ui/components/ui/scroll-area';
 import { useLiveCookies } from '@/ui/hooks/useLiveCookies';
+import { useSettings } from '@/ui/hooks/useSettings';
+import { sanitizeHarLog } from '@/background/har-recorder';
 import { browserAPI } from '@/lib/browser-api';
 import type { LiveCookie, LiveTracker, StorageEntry } from '@/ui/types/messages';
+import type { HarLog } from '@/lib/har-types';
 import type { ConsentBurden } from '@/lib/tracker-matcher';
 import { detectSuspiciousPattern, scanJsonValue } from '@/lib/pattern-detector';
 import { UrlBar } from '@/ui/components/scan/UrlBar';
@@ -57,6 +60,7 @@ function formatLifetime(expirationDate?: number): string | null {
 
 export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettingsOpen: () => void; url?: string; supported: boolean }) {
   const { cookies, trackers, localStorage, sessionStorage, hostname, loading, error, refresh } = useLiveCookies();
+  const { settings } = useSettings();
   const [clearing, setClearing] = useState(false);
   const [testing, setTesting] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -186,7 +190,7 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
     try {
       const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) return;
-      const res = await new Promise<{ har?: object; error?: string }>((resolve) => {
+      const res = await new Promise<{ har?: HarLog; error?: string }>((resolve) => {
         browserAPI.runtime.sendMessage({ type: 'getHar', tabId: tab.id }, (r) => {
           void browserAPI.runtime.lastError;
           resolve(r || {});
@@ -199,7 +203,8 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
         showToast('warning', 'HAR export needs a Test scan first. Click Test to capture network traffic, then try again.');
         return;
       }
-      const json = JSON.stringify(res.har, null, 2);
+      const har = settings.sanitizeHar ? sanitizeHarLog(res.har) : res.har;
+      const json = JSON.stringify(har, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

@@ -8,12 +8,14 @@ export interface Settings {
   theme: ThemeMode;
   highContrast: ContrastMode;
   fontScale: number; // 80 | 90 | 100 | 110 | 120
+  sanitizeHar: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   highContrast: 'system',
-  fontScale: 100
+  fontScale: 100,
+  sanitizeHar: true
 };
 
 type StoredSettings = Partial<Omit<Settings, 'highContrast'>> & {

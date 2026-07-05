@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Sun, Moon, Desktop, Eye, TextAa, Database } from '@phosphor-icons/react';
+import { ArrowLeft, Sun, Moon, Desktop, Eye, TextAa, Database, FileCode } from '@phosphor-icons/react';
 import { Button } from '@/ui/components/ui/button';
 import { Card, CardContent } from '@/ui/components/ui/card';
 import { Separator } from '@/ui/components/ui/separator';
@@ -115,6 +115,39 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
                   variant={settings.highContrast === value ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => update({ highContrast: value as ContrastMode })}
+                  className="flex-1 h-8 text-xs"
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* HAR sanitizer */}
+          <div>
+            <div className="flex items-center gap-2">
+              <FileCode size={14} className="text-muted-foreground" />
+              <div>
+                <span className="text-xs font-semibold">HAR Sanitizer</span>
+                <p className="text-[10px] text-muted-foreground">
+                  Redact Cookie, Authorization, and Set-Cookie values in HAR exports. Turn off for raw audit exports.
+                </p>
+              </div>
+            </div>
+            <div role="radiogroup" aria-label="HAR sanitizer" className="flex gap-1 mt-2">
+              {([
+                { value: true, label: 'On' },
+                { value: false, label: 'Off' }
+              ] as const).map(({ value, label }) => (
+                <Button
+                  key={label}
+                  role="radio"
+                  aria-checked={settings.sanitizeHar === value}
+                  variant={settings.sanitizeHar === value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ sanitizeHar: value })}
                   className="flex-1 h-8 text-xs"
                 >
                   {label}

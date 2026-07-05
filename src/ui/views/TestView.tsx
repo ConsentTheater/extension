@@ -8,8 +8,11 @@ import { Skeleton } from '@/ui/components/ui/skeleton';
 import { Badge } from '@/ui/components/ui/badge';
 import { Stats } from '@/ui/components/scan/Stats';
 import { useScanState } from '@/ui/state/ScanContext';
+import { useSettings } from '@/ui/hooks/useSettings';
+import { sanitizeHarLog } from '@/background/har-recorder';
 import { useState } from 'react';
 import type { Report, CapturedCookie, CapturedRequest } from '@/ui/types/messages';
+import type { HarLog } from '@/lib/har-types';
 import type { ConsentBurden } from '@/lib/tracker-matcher';
 
 const BURDEN_ORDER: Record<ConsentBurden, number> = {
@@ -124,6 +127,7 @@ function TestingView({ url }: { url?: string }) {
 
 function ReportView({ report, onRetest, url, monitoring }: { report: Report; onRetest: () => void; url?: string; monitoring?: boolean }) {
   const [copied, setCopied] = useState(false);
+  const { settings } = useSettings();
 
   const onCopy = async () => {
     const text = formatReport(report, url || '');
@@ -151,7 +155,7 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
     try {
       const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) return;
-      const res = await new Promise<{ har?: object; error?: string }>((resolve) => {
+      const res = await new Promise<{ har?: HarLog; error?: string }>((resolve) => {
         browserAPI.runtime.sendMessage({ type: 'getHar', tabId: tab.id }, (r) => {
           void browserAPI.runtime.lastError;
           resolve(r || {});
@@ -161,7 +165,8 @@ function ReportView({ report, onRetest, url, monitoring }: { report: Report; onR
         console.warn('no HAR available:', res.error);
         return;
       }
-      const json = JSON.stringify(res.har, null, 2);
+      const har = settings.sanitizeHar ? sanitizeHarLog(res.har) : res.har;
+      const json = JSON.stringify(har, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
