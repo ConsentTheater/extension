@@ -1,17 +1,12 @@
 import { Printer } from '@phosphor-icons/react';
+import { useState } from 'preact/hooks';
 import { Button } from '@/ui/components/ui/button';
 import type { Report, CapturedCookie, CapturedRequest } from '@/ui/types/messages';
 import type { ConsentBurden } from '@/lib/tracker-matcher';
+import { reportStrings, REPORT_LANGS, type ReportLang, type ReportStrings } from '@/ui/i18n/report';
 
 const BURDEN_ORDER: Record<ConsentBurden, number> = {
   required_strict: 0, required: 1, contested: 2, minimal: 3
-};
-
-const BURDEN_LABEL: Record<ConsentBurden, string> = {
-  required_strict: 'Consent required (strict)',
-  required: 'Consent required',
-  contested: 'Contested',
-  minimal: 'Minimal'
 };
 
 const BURDEN_BG: Record<ConsentBurden, string> = {
@@ -21,14 +16,18 @@ const BURDEN_BG: Record<ConsentBurden, string> = {
   minimal: 'bg-slate-100 text-slate-700 print:bg-slate-50'
 };
 
+function H({ content }: { content: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: content }} />;
+}
+
 export function PrintReport({ report }: { report: Report }) {
+  const [lang, setLang] = useState<ReportLang>('en');
+  const t = reportStrings[lang];
   const generatedAt = new Date(report.finishedAt || Date.now());
   const origin = report.origin || '—';
   let host = '—';
   try { if (report.origin) host = new URL(report.origin).hostname; } catch { /* ignore */ }
 
-  // Approximate location from the IANA timezone — `Europe/Madrid` → "Madrid, Europe".
-  // Local-only; no network call. Privacy promise preserved.
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
   const tzParts = tz.split('/');
   const tzCity = (tzParts[tzParts.length - 1] || '').replace(/_/g, ' ');
@@ -45,12 +44,22 @@ export function PrintReport({ report }: { report: Report }) {
     <>
       <div className="no-print sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
-          <p className="text-sm text-muted-foreground">
-            Use your browser's <span className="font-medium text-foreground">Print → Save as PDF</span> to export this report.
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              <H content={t.toolbar} />
+            </p>
+            <select
+              value={lang}
+              onChange={(e) => setLang((e.target as HTMLSelectElement).value as ReportLang)}
+              className="h-8 rounded border border-border bg-background px-2 text-xs font-medium text-foreground"
+              aria-label="Report language"
+            >
+              {REPORT_LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+            </select>
+          </div>
           <Button onClick={() => window.print()} size="sm">
             <Printer size={14} weight="regular" />
-            Print / Save as PDF
+            {t.print}
           </Button>
         </div>
       </div>
@@ -58,14 +67,14 @@ export function PrintReport({ report }: { report: Report }) {
       <main className="mx-auto max-w-4xl px-6 py-8 print:px-0 print:py-4 print:max-w-none">
         <header className="mb-6 border-b pb-4">
           <div className="flex items-baseline justify-between gap-4">
-            <h1 className="text-2xl font-bold tracking-tight">ConsentTheater scan report</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
             <span className="font-mono text-xs text-muted-foreground">consenttheater.org</span>
           </div>
           <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-            <Row term="Site"><span className="font-mono break-all">{host}</span></Row>
-            <Row term="Origin"><span className="font-mono break-all">{origin}</span></Row>
-            <Row term="Scanned at">{generatedAt.toISOString().replace('T', ' ').slice(0, 19)} UTC</Row>
-            <Row term="Local time">
+            <Row term={t.site}><span className="font-mono break-all">{host}</span></Row>
+            <Row term={t.origin}><span className="font-mono break-all">{origin}</span></Row>
+            <Row term={t.scannedAt}>{generatedAt.toISOString().replace('T', ' ').slice(0, 19)} UTC</Row>
+            <Row term={t.localTime}>
               <span className="block">{generatedAt.toLocaleString()}</span>
               {locationLabel && <span className="block text-muted-foreground">{locationLabel}</span>}
             </Row>
@@ -73,166 +82,130 @@ export function PrintReport({ report }: { report: Report }) {
         </header>
 
         {report.mode === 'live' && (
-          <Section title="Live snapshot" compact>
+          <Section title={t.liveSnapshot} compact>
             <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 print:bg-amber-50 leading-relaxed">
-              <strong>This is a live snapshot, not a Test scan.</strong> ConsentTheater
-              built this report from the cookies and tracker hosts visible in the page
-              right now — it has no before/after-consent split because no clear-and-reload
-              Test was run. Click <em>Test</em> in the sidebar to capture the
-              timeline-based report (with pre-consent vs post-consent split and a
-              matching HAR network trace).
+              <H content={t.liveSnapshotBody} />
             </p>
           </Section>
         )}
 
-        <Section title="Summary" compact>
+        <Section title={t.summary} compact>
           {report.mode === 'scan' ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat value={report.stats.preConsentCookies} label="Cookies before consent" emphasis={report.stats.preConsentCookies > 0} />
-              <Stat value={report.stats.preConsentRequests} label="Requests before consent" emphasis={report.stats.preConsentRequests > 0} />
-              <Stat value={report.stats.dataLeakRequests} label="Data-leak requests" emphasis={report.stats.dataLeakRequests > 0} />
-              <Stat value={report.stats.totalCookies + report.stats.totalRequests} label="Total observations" />
+              <Stat value={report.stats.preConsentCookies} label={t.cookiesBeforeConsent} emphasis={report.stats.preConsentCookies > 0} />
+              <Stat value={report.stats.preConsentRequests} label={t.requestsBeforeConsent} emphasis={report.stats.preConsentRequests > 0} />
+              <Stat value={report.stats.dataLeakRequests} label={t.dataLeakRequests} emphasis={report.stats.dataLeakRequests > 0} />
+              <Stat value={report.stats.totalCookies + report.stats.totalRequests} label={t.totalObservations} />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Stat value={report.stats.totalCookies} label="Cookies on this page" />
-              <Stat value={report.stats.totalRequests} label="Third-party hosts" />
-              <Stat value={report.stats.dataLeakRequests} label="Data-leak requests" emphasis={report.stats.dataLeakRequests > 0} />
+              <Stat value={report.stats.totalCookies} label={t.cookiesOnPage} />
+              <Stat value={report.stats.totalRequests} label={t.thirdPartyHosts} />
+              <Stat value={report.stats.dataLeakRequests} label={t.dataLeakRequests} emphasis={report.stats.dataLeakRequests > 0} />
             </div>
           )}
         </Section>
 
         {report.mode === 'scan' && (
-          <Section title="Consent banner" compact>
-            <BannerPanel report={report} />
+          <Section title={t.consentBanner} compact>
+            <BannerPanel report={report} t={t} />
           </Section>
         )}
 
         {report.mode === 'scan' && (
-          <Section title="How to read the next two sections" compact>
+          <Section title={t.howToRead} compact>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Below we list cookies and third-party requests captured{' '}
-              <em>before</em> the consent banner was resolved (or before any user
-              interaction, if no banner appeared). The split is a best-effort
-              timestamp comparison — browsers don't expose a clean "consent state
-              changed" signal, so async, retried, or batched scripts can land on
-              either side of the cut-off. Use this as evidence, not a verdict.
-              For ground-truth network ordering, see the matching HAR export.
+              <H content={t.howToReadBody} />
             </p>
           </Section>
         )}
 
         {report.mode === 'scan' ? (
           <>
-            <Section title={`Cookies set before consent (${preCookies.length})`}>
+            <Section title={`${t.cookiesSetBefore} (${preCookies.length})`}>
               {preCookies.length === 0
-                ? <Empty>No cookies were set before the user resolved the consent banner.</Empty>
-                : <CookieTable cookies={preCookies} />}
+                ? <Empty>{t.noCookiesBefore}</Empty>
+                : <CookieTable cookies={preCookies} t={t} />}
             </Section>
 
-            <Section title={`Requests fired before consent (${preRequests.length})`}>
+            <Section title={`${t.requestsFiredBefore} (${preRequests.length})`}>
               {preRequests.length === 0
-                ? <Empty>No third-party requests fired before the user resolved the consent banner.</Empty>
-                : <RequestTable requests={preRequests} />}
+                ? <Empty>{t.noRequestsBefore}</Empty>
+                : <RequestTable requests={preRequests} t={t} />}
             </Section>
           </>
         ) : (
           <>
-            <Section title={`Cookies on this page (${report.cookies.length})`}>
+            <Section title={`${t.cookiesOnPageTitle} (${report.cookies.length})`}>
               {report.cookies.length === 0
-                ? <Empty>No cookies are currently set on this page.</Empty>
-                : <CookieTable cookies={sortByBurden(report.cookies)} />}
+                ? <Empty>{t.noCookiesOnPage}</Empty>
+                : <CookieTable cookies={sortByBurden(report.cookies)} t={t} />}
             </Section>
 
-            <Section title={`Third-party hosts contacted (${dedupRequests(report.requests.filter(r => r.category !== 'data_leak')).length})`}>
+            <Section title={`${t.thirdPartyHostsTitle} (${dedupRequests(report.requests.filter(r => r.category !== 'data_leak')).length})`}>
               {report.requests.length === 0
-                ? <Empty>No third-party tracker hosts have been contacted yet.</Empty>
-                : <RequestTable requests={dedupRequests(report.requests.filter(r => r.category !== 'data_leak'))} />}
+                ? <Empty>{t.noThirdPartyHosts}</Empty>
+                : <RequestTable requests={dedupRequests(report.requests.filter(r => r.category !== 'data_leak'))} t={t} />}
             </Section>
           </>
         )}
 
         {dataLeaks.length > 0 && (
-          <Section title={`Data-leak requests (${dataLeaks.length})`}>
+          <Section title={`${t.dataLeakTitle} (${dataLeaks.length})`}>
             <p className="mb-2 text-xs text-muted-foreground leading-relaxed">
-              Requests categorised as <span className="font-mono">data_leak</span> in the Playbill catalogue.
-              These exfiltrate IP / user-agent to third parties even when the request itself looks benign
-              (web fonts, embedded video, hosted libraries). Multiple EU rulings (Austrian DPA 2022,
-              LG München 2022) treat these as personal-data transfers regardless of consent.
+              <H content={t.dataLeakBody} />
             </p>
-            <RequestTable requests={dataLeaks} />
+            <RequestTable requests={dataLeaks} t={t} />
           </Section>
         )}
 
         {report.mode === 'scan' && otherCookies.length > 0 && (
-          <Section title={`Cookies set after consent (${otherCookies.length})`}>
-            <CookieTable cookies={otherCookies} />
+          <Section title={`${t.cookiesSetAfter} (${otherCookies.length})`}>
+            <CookieTable cookies={otherCookies} t={t} />
           </Section>
         )}
 
         {report.mode === 'scan' && otherRequests.length > 0 && (
-          <Section title={`Other third-party requests (${otherRequests.length})`}>
-            <RequestTable requests={otherRequests} />
+          <Section title={`${t.otherThirdParty} (${otherRequests.length})`}>
+            <RequestTable requests={otherRequests} t={t} />
           </Section>
         )}
 
-        <Section title="Legend" compact>
+        <Section title={t.legend} compact>
           <div className="space-y-3 text-xs">
             <div>
-              <p className="mb-1.5 font-semibold text-foreground">Consent burden</p>
+              <p className="mb-1.5 font-semibold text-foreground">{t.consentBurden}</p>
               <p className="mb-2 text-muted-foreground leading-relaxed">
-                What each tracker requires under GDPR / ePrivacy. Same labels are used in the
-                {' '}<span className="font-mono">@consenttheater/playbill</span> catalogue.
+                <H content={t.consentBurdenDesc} />
               </p>
               <ul className="space-y-1">
-                <LegendItem chip="required_strict" desc="Cross-site profiling, ad-tech retargeting, fingerprinting, session replay. Always needs prior, informed, freely-given consent." />
-                <LegendItem chip="required" desc="Standard analytics / marketing tracking. Consent required in nearly all interpretations." />
-                <LegendItem chip="contested" desc="Tracking-adjacent or jurisdiction-dependent. Some authorities allow under legitimate interest, others require consent." />
-                <LegendItem chip="minimal" desc="Functional, security, or strictly-necessary in most readings. Often exempt from consent." />
+                <LegendItem chip="required_strict" desc={t.burdenStrict} t={t} />
+                <LegendItem chip="required" desc={t.burdenRequired} t={t} />
+                <LegendItem chip="contested" desc={t.burdenContested} t={t} />
+                <LegendItem chip="minimal" desc={t.burdenMinimal} t={t} />
               </ul>
             </div>
             <div>
-              <p className="mb-1.5 font-semibold text-foreground">Categories</p>
+              <p className="mb-1.5 font-semibold text-foreground">{t.categories}</p>
               <p className="text-muted-foreground leading-relaxed">
-                <span className="font-mono">advertising</span>, <span className="font-mono">analytics</span>,{' '}
-                <span className="font-mono">marketing</span>, <span className="font-mono">tag_manager</span>,{' '}
-                <span className="font-mono">social</span>, <span className="font-mono">session_recording</span>,{' '}
-                <span className="font-mono">fingerprinting</span> — typically need consent.
-                {' '}<span className="font-mono">functional</span>, <span className="font-mono">security</span>,{' '}
-                <span className="font-mono">consent</span> — usually consent-exempt.
-                {' '}<span className="font-mono">data_leak</span> — third-party calls that exfiltrate IP / user-agent
-                even when the resource itself looks benign (fonts, embedded video, hosted libraries); multiple
-                EU rulings treat these as personal-data transfers regardless of consent.
+                <H content={t.categoriesBody} />
               </p>
             </div>
             <div>
-              <p className="mb-1.5 font-semibold text-foreground">Before consent</p>
+              <p className="mb-1.5 font-semibold text-foreground">{t.beforeConsentTitle}</p>
               <p className="text-muted-foreground leading-relaxed">
-                "Before consent" means the cookie was set or the request fired{' '}
-                <em>before the user clicked Accept / Reject / Manage</em> on the consent banner — or, if no
-                banner was shown, before any user interaction at all. This is the GDPR-relevant moment:
-                tracking that happens before consent generally cannot rely on consent as a legal basis.
+                <H content={t.beforeConsentBody} />
               </p>
               <p className="mt-2 text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">A caveat on accuracy.</strong> This split is a
-                best-effort timestamp comparison: ConsentTheater records when the user clicked
-                a banner button and tags every captured cookie / request as before or after that
-                moment. Browsers don't expose a clean "consent state changed" signal, so
-                third-party scripts that load asynchronously, retry on consent change, or batch
-                their writes can land on either side of the cut-off depending on timing. Treat
-                the before/after split as informative — useful evidence, not a legal verdict.
-                When in doubt, look at the raw HAR export for ground-truth network ordering.
+                <strong className="text-foreground">{t.caveatTitle}</strong>{' '}
+                <H content={t.caveatBody} />
               </p>
             </div>
           </div>
         </Section>
 
         <footer className="mt-10 border-t pt-4 text-xs text-muted-foreground space-y-1">
-          <p>
-            ConsentTheater records what was observed during a single scan; it does not issue compliance
-            verdicts. Whether the observations above amount to a GDPR / ePrivacy violation is a legal
-            question for a Data Protection Authority, a court, or your DPO.
-          </p>
+          <p>{t.footerLegal}</p>
           <p>
             Tracker classification courtesy of{' '}
             <a href="https://codeberg.org/ConsentTheater/playbill" target="_blank" rel="noopener" className="text-link hover:underline">
@@ -244,7 +217,7 @@ export function PrintReport({ report }: { report: Report }) {
             ({report.playbill ? report.playbill.cookies.toLocaleString() : '—'} cookies,{' '}
             {report.playbill ? report.playbill.domains.toLocaleString() : '—'} domains,{' '}
             {report.playbill ? report.playbill.companies.toLocaleString() : '—'} companies).
-            Report generated by ConsentTheater browser extension. Source:
+            {t.footerPlaybill}
             <span className="font-mono"> codeberg.org/ConsentTheater/extension</span>.
           </p>
         </footer>
@@ -283,31 +256,31 @@ function Stat({ value, label, emphasis }: { value: number; label: string; emphas
   );
 }
 
-function BannerPanel({ report }: { report: Report }) {
+function BannerPanel({ report, t }: { report: Report; t: ReportStrings }) {
   const b = report.banner;
   if (!b || !b.detected) {
     return (
       <p className="rounded border border-dashed bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-        No consent banner was detected on this page during the scan.
+        {t.bannerNotDetected}
       </p>
     );
   }
   return (
     <div className="rounded border bg-muted/20 px-3 py-2.5 text-sm space-y-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <BannerStatus label="Detected" present />
-        <BannerStatus label="Accept" present={!!b.hasAcceptButton} />
-        <BannerStatus label="Reject" present={!!b.hasRejectButton} />
-        <BannerStatus label="Manage" present={!!b.hasManageButton} />
+        <BannerStatus label={t.bannerDetected} statusText={t.bannerPresent} present />
+        <BannerStatus label={t.bannerAccept} statusText={t.bannerPresent} present={!!b.hasAcceptButton} missingText={t.bannerMissing} />
+        <BannerStatus label={t.bannerReject} statusText={t.bannerPresent} present={!!b.hasRejectButton} missingText={t.bannerMissing} />
+        <BannerStatus label={t.bannerManage} statusText={t.bannerPresent} present={!!b.hasManageButton} missingText={t.bannerMissing} />
         {report.stats.consentAction && (
           <span className="ml-auto text-xs text-muted-foreground">
-            User clicked <span className="font-mono font-medium text-foreground">{report.stats.consentAction}</span>
+            {t.userClicked} <span className="font-mono font-medium text-foreground">{report.stats.consentAction}</span>
           </span>
         )}
       </div>
       {b.textPreview && (
         <div className="border-t pt-2">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Banner text excerpt</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{t.bannerTextExcerpt}</p>
           <p className="font-mono text-[11px] leading-snug text-foreground/80">{b.textPreview}</p>
         </div>
       )}
@@ -315,32 +288,32 @@ function BannerPanel({ report }: { report: Report }) {
   );
 }
 
-function BannerStatus({ label, present }: { label: string; present: boolean }) {
+function BannerStatus({ label, present, statusText, missingText }: { label: string; present: boolean; statusText: string; missingText?: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={`inline-block h-2 w-2 rounded-full ${present ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden />
       <span className="text-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">{present ? 'present' : 'missing'}</span>
+      <span className="text-xs text-muted-foreground">{present ? statusText : (missingText ?? statusText)}</span>
     </span>
   );
 }
 
-function CookieTable({ cookies }: { cookies: CapturedCookie[] }) {
+function CookieTable({ cookies, t }: { cookies: CapturedCookie[]; t: ReportStrings }) {
   return (
     <table className="w-full border-collapse text-xs">
       <thead className="text-left">
         <tr className="border-b">
-          <Th className="w-[14%]">Burden</Th>
-          <Th className="w-[26%]">Name</Th>
-          <Th className="w-[24%]">Domain</Th>
-          <Th className="w-[20%]">Company</Th>
-          <Th className="w-[16%]">Service</Th>
+          <Th className="w-[14%]">{t.tableBurden}</Th>
+          <Th className="w-[26%]">{t.tableName}</Th>
+          <Th className="w-[24%]">{t.tableDomain}</Th>
+          <Th className="w-[20%]">{t.tableCompany}</Th>
+          <Th className="w-[16%]">{t.tableService}</Th>
         </tr>
       </thead>
       <tbody>
         {cookies.map((c, i) => (
           <tr key={`${c.name}-${c.domain}-${i}`} className="border-b border-border/40 align-top">
-            <Td><BurdenChip value={c.consent_burden} /></Td>
+            <Td><BurdenChip value={c.consent_burden} t={t} /></Td>
             <Td><span className="font-mono break-all">{c.name}</span></Td>
             <Td><span className="font-mono break-all">{c.domain || '—'}</span></Td>
             <Td>{c.company || '—'}</Td>
@@ -352,22 +325,22 @@ function CookieTable({ cookies }: { cookies: CapturedCookie[] }) {
   );
 }
 
-function RequestTable({ requests }: { requests: CapturedRequest[] }) {
+function RequestTable({ requests, t }: { requests: CapturedRequest[]; t: ReportStrings }) {
   return (
     <table className="w-full border-collapse text-xs">
       <thead className="text-left">
         <tr className="border-b">
-          <Th className="w-[14%]">Burden</Th>
-          <Th className="w-[34%]">Hostname</Th>
-          <Th className="w-[20%]">Company</Th>
-          <Th className="w-[16%]">Service</Th>
-          <Th className="w-[16%]">Category</Th>
+          <Th className="w-[14%]">{t.tableBurden}</Th>
+          <Th className="w-[34%]">{t.tableHostname}</Th>
+          <Th className="w-[20%]">{t.tableCompany}</Th>
+          <Th className="w-[16%]">{t.tableService}</Th>
+          <Th className="w-[16%]">{t.tableCategory}</Th>
         </tr>
       </thead>
       <tbody>
         {requests.map((r, i) => (
           <tr key={`${r.hostname}-${i}`} className="border-b border-border/40 align-top">
-            <Td><BurdenChip value={r.consent_burden} /></Td>
+            <Td><BurdenChip value={r.consent_burden} t={t} /></Td>
             <Td><span className="font-mono break-all">{r.hostname}</span></Td>
             <Td>{r.company || '—'}</Td>
             <Td>{r.service || '—'}</Td>
@@ -387,18 +360,26 @@ function Td({ children }: { children: preact.ComponentChildren }) {
   return <td className="py-1.5 pr-2">{children}</td>;
 }
 
-function LegendItem({ chip, desc }: { chip: ConsentBurden; desc: string }) {
+function LegendItem({ chip, desc, t }: { chip: ConsentBurden; desc: string; t?: ReportStrings }) {
   return (
     <li className="flex items-start gap-2">
-      <BurdenChip value={chip} />
+      <BurdenChip value={chip} t={t} />
       <span className="text-muted-foreground leading-relaxed">{desc}</span>
     </li>
   );
 }
 
-function BurdenChip({ value }: { value: ConsentBurden }) {
+const BURDEN_DESC_KEY: Record<ConsentBurden, 'burdenStrict' | 'burdenRequired' | 'burdenContested' | 'burdenMinimal'> = {
+  required_strict: 'burdenStrict',
+  required: 'burdenRequired',
+  contested: 'burdenContested',
+  minimal: 'burdenMinimal'
+};
+
+function BurdenChip({ value, t }: { value: ConsentBurden; t?: ReportStrings }) {
+  const title = t ? t[BURDEN_DESC_KEY[value]] : undefined;
   return (
-    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${BURDEN_BG[value]}`} title={BURDEN_LABEL[value]}>
+    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${BURDEN_BG[value]}`} title={title}>
       {value.replace('_', '\u00a0')}
     </span>
   );
