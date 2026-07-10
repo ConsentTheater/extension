@@ -5,10 +5,24 @@ All notable changes to the ConsentTheater extension are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] — 2026-07-10
+
+### Highlights
+
+A feature release. Bumps `@consenttheater/playbill` 0.5.0 → 0.6.0 (schema v3
+— 4,109 cookies, 6,087 domains, 3,000 companies), adds a HAR sanitizer
+toggle for safe export sharing, surfaces Playbill version + record counts
+in every export format, and introduces report-page localisation for five
+languages (English, Spanish, French, German, Italian).
 
 ### Added
 
+- **Report page localisation (EN / ES / FR / DE / IT).** The PDF / print
+  report page now has a language dropdown in the toolbar. Default is
+  English; selecting a language re-renders the entire report — title,
+  section headings, table headers, legend, footer, banner status labels
+  — in the chosen language. Only the report page is translated; the
+  sidebar UI stays English. Strings live in `src/ui/i18n/report.ts`.
 - **HAR Sanitizer toggle in Settings.** New On/Off setting (default On,
   under the Playbill Database card, before appearance options). When on,
   HAR exports redact sensitive header values — Cookie and Set-Cookie
@@ -392,5 +406,10 @@ Initial public release.
   from Preact's runtime implementation of `dangerouslySetInnerHTML` and does
   not reflect user-controlled input.
 
-[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.1.0...HEAD
+[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.6.0...HEAD
+[0.6.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.6.0
+[0.5.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.5.0
+[0.4.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.4.0
+[0.3.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.3.0
+[0.2.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.2.0
 [0.1.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.1.0

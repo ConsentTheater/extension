@@ -26,7 +26,7 @@ const SHARED_DIR = path.join(DIST_DIR, '.shared');
 
 // Read the *installed* Playbill version from its own package.json — not the
 // declared range in our devDependencies, which freezes SettingsView at the
-// range floor (e.g. "0.5.0") even after npm resolves a newer in-range build.
+// range floor (e.g. "0.6.0") even after npm resolves a newer in-range build.
 const pkgJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf-8'));
 const playbillPkg = JSON.parse(
   fs.readFileSync(path.join(ROOT_DIR, 'node_modules/@consenttheater/playbill/package.json'), 'utf-8')
