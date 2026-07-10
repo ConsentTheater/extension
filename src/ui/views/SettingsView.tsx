@@ -41,7 +41,7 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Database size={14} className="text-link" />
+                <Database size={14} className="text-link shrink-0" />
                 <span className="text-xs font-semibold">Playbill Database</span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -69,8 +69,8 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
 
           {/* HAR sanitizer */}
           <div>
-            <div className="flex items-center gap-2">
-              <FileCode size={14} className="text-muted-foreground" />
+            <div className="flex items-start gap-2">
+              <FileCode size={14} className="mt-1 shrink-0" />
               <div>
                 <span className="text-xs font-semibold">HAR Sanitizer</span>
                 <p className="text-[10px] text-muted-foreground">
@@ -126,8 +126,8 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
 
           {/* High contrast */}
           <div>
-            <div className="flex items-center gap-2">
-              <Eye size={14} className="text-muted-foreground" />
+            <div className="flex items-start gap-2">
+              <Eye size={14} className="mt-1 shrink-0" />
               <div>
                 <span className="text-xs font-semibold">High Contrast</span>
                 <p className="text-[10px] text-muted-foreground">
@@ -160,8 +160,8 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
 
           {/* Font scale */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <TextAa size={14} className="text-muted-foreground" />
+            <div className="flex items-start gap-2 mb-2">
+              <TextAa size={14} className="mt-1 shrink-0" />
               <div>
                 <span className="text-xs font-semibold">Font Size</span>
                 <p className="text-[10px] text-muted-foreground">{settings.fontScale}%</p>
