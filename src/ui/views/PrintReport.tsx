@@ -44,23 +44,23 @@ export function PrintReport({ report }: { report: Report }) {
     <>
       <div className="no-print sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-4 justify-between px-6 py-3">
+          <p className="text-sm text-muted-foreground">
+            <H content={t.toolbar} />
+          </p>
           <div className="flex items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              <H content={t.toolbar} />
-            </p>
             <select
               value={lang}
               onChange={(e) => setLang((e.target as HTMLSelectElement).value as ReportLang)}
-              className="h-8 rounded border border-border bg-background px-2 text-xs font-medium text-foreground"
+              className="h-8 rounded-none border border-border bg-background px-2 text-xs font-medium text-foreground"
               aria-label="Report language"
             >
               {REPORT_LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
             </select>
+            <Button onClick={() => window.print()} size="sm" className={"whitespace-nowrap"}>
+              <Printer size={14} weight="regular" />
+              {t.print}
+            </Button>
           </div>
-          <Button onClick={() => window.print()} size="sm" className={"whitespace-nowrap"}>
-            <Printer size={14} weight="regular" />
-            {t.print}
-          </Button>
         </div>
       </div>
 
