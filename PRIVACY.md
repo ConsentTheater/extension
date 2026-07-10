@@ -1,6 +1,6 @@
 # ConsentTheater Privacy Policy
 
-_Last updated: 2026-04-24_
+_Last updated: 2026-07-10_
 
 ConsentTheater is a browser extension that audits web pages for GDPR-relevant
 tracking behavior. It is built around a single rule: **nothing leaves your
@@ -42,9 +42,10 @@ extension storage (`chrome.storage.local` / `browser.storage.local`). This
 storage lives on your device, is scoped to the extension, and is not
 synchronized to any cloud:
 
-- Your **UI preferences** (theme, dark mode, high-contrast mode, language).
+- Your **UI preferences** (theme, dark mode, high-contrast mode, HAR
+  sanitizer toggle).
 - The **Playbill tracker catalogue version** the extension is using (a single
-  string like `0.1.3`, so the sidebar can display which version you have).
+  string like `0.6.0`, so the sidebar can display which version you have).
 
 There are no identifiers, no scan history, no per-site data, and no timestamps
 in this storage. Uninstalling the extension removes it.
@@ -71,17 +72,47 @@ which is **bundled into the extension at build time**. No runtime fetch, no
 CDN call, no update check initiated by the extension. Catalogue updates ship
 through normal browser extension updates (Chrome Web Store, Firefox AMO).
 
+## HAR exports and the sanitizer toggle
+
+When you export a HAR file, the extension serialises the captured network
+trace to a JSON file and triggers a browser download. This file is written to
+your download folder — it is not uploaded anywhere.
+
+HAR files can contain sensitive data: Cookie values, Authorization tokens,
+and Set-Cookie headers. Since version 0.6.0, the **HAR Sanitizer** is on by
+default. When enabled, it redacts sensitive header values before the file is
+written:
+
+- **Cookie** and **Set-Cookie** values are replaced with `[redacted]` —
+  cookie names are preserved so the HAR remains useful for audit (e.g.
+  `_ga=[redacted]`).
+- **Authorization**, **Proxy-Authorization**, **X-API-Key**,
+  **X-Auth-Token**, and **X-Access-Token** values are fully redacted.
+
+Turning the sanitizer off in Settings produces a raw HAR with all header
+values intact. This is intended for auditors who need the full credential
+trail and understand the sensitivity of the file they are creating.
+
+## Report language
+
+The report page (opened when you click PDF) includes a language dropdown
+(English, Spanish, French, German, Italian). Your language choice is kept in
+the report page's memory only — it is not written to extension storage and
+resets to English each time you open a new report. The sidebar UI is not
+translated; only the report page is.
+
 ## Permissions — why each one is requested
 
 | Permission                    | Why it is needed                                                                 |
 |-------------------------------|----------------------------------------------------------------------------------|
 | `cookies`                     | Read and clear cookies for the scanned origin, so the scan starts from a clean slate and so the report can classify which cookies were set. |
-| `storage`                     | Save your UI preferences (theme, language) in local extension storage.           |
+| `storage`                     | Save your UI preferences (theme, contrast, HAR sanitizer toggle) in local extension storage. |
 | `tabs`                        | Know which tab you want to scan and re-sync the sidebar when you switch tabs.    |
 | `webRequest`                  | Observe outgoing requests during a scan to identify third-party tracker hosts.   |
 | `webNavigation`               | Know when the scanned tab finishes reloading, so the scan can capture pre-consent requests reliably. |
 | `browsingData`                | Clear `localStorage`, `sessionStorage`, `IndexedDB`, `cacheStorage`, and service workers for the scanned origin before the scan reloads the page — this is how we measure the _first visit_ state a real user would see. |
 | `sidePanel` (Chrome only)     | Open the ConsentTheater sidebar from the toolbar icon.                           |
+| `sidebar_action` (Firefox only) | Open the ConsentTheater sidebar from the toolbar icon.                        |
 | `<all_urls>` (host access)    | Required for the above APIs to cover any site you might want to scan. The content script only does work on the tab where you click **Scan**. |
 
 No permission is used for any purpose other than the ones listed above.
