@@ -43,7 +43,7 @@ export function PrintReport({ report }: { report: Report }) {
   return (
     <>
       <div className="no-print sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-4xl items-center gap-4 justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <p className="text-sm text-muted-foreground">
               <H content={t.toolbar} />
@@ -57,7 +57,7 @@ export function PrintReport({ report }: { report: Report }) {
               {REPORT_LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
             </select>
           </div>
-          <Button onClick={() => window.print()} size="sm">
+          <Button onClick={() => window.print()} size="sm" className={"whitespace-nowrap"}>
             <Printer size={14} weight="regular" />
             {t.print}
           </Button>
