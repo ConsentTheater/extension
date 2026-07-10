@@ -26,17 +26,16 @@ import type {
 } from '@/lib/har-types';
 import type { DomainMatch } from '@/lib/tracker-matcher';
 
-const SENSITIVE_HEADERS = new Set([
-  'cookie',
-  'set-cookie',
+const REDACTED = '[redacted]';
+
+/** Headers whose entire value is sensitive — no sub-structure to preserve. */
+const FULL_REDACT_HEADERS = new Set([
   'authorization',
   'proxy-authorization',
   'x-api-key',
   'x-auth-token',
   'x-access-token'
 ]);
-
-const REDACTED = '[redacted]';
 
 export function sanitizeHarLog(log: HarLog): HarLog {
   const entries = log.log.entries.map(sanitizeEntry);
@@ -52,9 +51,23 @@ function sanitizeEntry(e: HarEntry): HarEntry {
 }
 
 function redactHeaders(headers: HarHeader[]): HarHeader[] {
-  return headers.map(h =>
-    SENSITIVE_HEADERS.has(h.name.toLowerCase()) ? { ...h, value: REDACTED } : h
-  );
+  return headers.map(h => {
+    const lower = h.name.toLowerCase();
+    if (FULL_REDACT_HEADERS.has(lower)) return { ...h, value: REDACTED };
+    if (lower === 'cookie' || lower === 'set-cookie') return { ...h, value: redactCookieValues(h.value) };
+    return h;
+  });
+}
+
+/** Keep cookie names, redact only values: `_ga=GA1.2.123; sid=abc` → `_ga=[redacted]; sid=[redacted]` */
+function redactCookieValues(raw: string): string {
+  return raw.split(';').map(pair => {
+    const eq = pair.indexOf('=');
+    if (eq < 0) return pair.trim();
+    const name = pair.slice(0, eq);
+    const attrs = pair.slice(eq + 1).trim();
+    return attrs ? `${name}=${REDACTED}` : pair.trim();
+  }).join('; ');
 }
 
 /** A still-in-flight request. We promote it to a finalized HarEntry on completion. */

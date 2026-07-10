@@ -74,7 +74,7 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
               <div>
                 <span className="text-xs font-semibold">HAR Sanitizer</span>
                 <p className="text-[10px] text-muted-foreground">
-                  Redact Cookie, Authorization, and Set-Cookie values in HAR exports. Turn off for raw audit exports.
+                  Redact sensitive header values (cookies, tokens) in HAR exports. Cookie names are preserved for audit. Turn off for raw exports.
                 </p>
               </div>
             </div>

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **HAR Sanitizer toggle in Settings.** New On/Off setting (default On,
+  under the Playbill Database card, before appearance options). When on,
+  HAR exports redact sensitive header values — Cookie and Set-Cookie
+  values are replaced with `[redacted]` while cookie names are preserved
+  for audit (e.g. `_ga=[redacted]`); Authorization, Proxy-Authorization,
+  X-API-Key, X-Auth-Token, and X-Access-Token values are fully redacted.
+  When off, exports the raw HAR as captured. Applied as a pure
+  `sanitizeHarLog()` pass before `JSON.stringify` in both LiveView and
+  TestView export paths.
+- **Playbill version + record counts in report exports.** The `Report`
+  type now carries a `playbill` block (packageVersion, schemaVersion,
+  cookies / domains / companies / total counts) populated by
+  `buildReport` and `buildLiveReport`. The PrintReport PDF footer and
+  the TestView text-export now show the catalogue version, schema
+  version, and entry counts with a link to
+  `codeberg.org/ConsentTheater/playbill`. The HAR `creator.comment`
+  field also includes the Playbill version and codeberg link.
+
 ### Fixed
 
 - **Settings now shows the *installed* Playbill version, not the declared
@@ -16,6 +36,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `node_modules`. `build.js` now reads the version straight from the
   installed package's own `package.json`, so it always reflects what's
   actually bundled.
+- **Burden chip no longer breaks across lines in PDF exports.**
+  `required_strict` was rendered with a regular space, letting it wrap
+  mid-label in printed/PDF output. The underscore is now replaced with a
+  non-breaking space (`\u00a0`).
+- **Settings icon alignment.** Icons in the Playbill Database, HAR
+  Sanitizer, High Contrast, and Font Size cards now use `shrink-0` and
+  `items-start` alignment for consistent spacing with multi-line labels.
+
+### Changed
+
+- **`@consenttheater/playbill` 0.5.0 → 0.6.0.** Schema v3 — 4,109
+  cookies, 6,087 domains, 3,000 companies (10,196 merged signatures, up
+  from 10,151). API surface unchanged; the extension picks up the new
+  data automatically via `loadPlaybill('full')`.
+- **Dev-dependency refresh.** Major bumps: TypeScript 5.9 → 6.0,
+  `@types/node` 25 → 26, `@types/chrome` 0.1 → 0.2, `sharp` 0.34 → 0.35,
+  `@radix-ui/react-slot` 1.2 → 1.3. Minor / patch bumps across
+  `@radix-ui/react-*`, `@tailwindcss/vite`, `tailwindcss`, `vite`,
+  `vitest` / `@vitest/ui`, `eslint`, `eslint-plugin-security`,
+  `typescript-eslint`, `fs-extra`, `postcss`, `preact`, `esbuild`,
+  `addons-linter`. TypeScript 7.0 is available but held back —
+  `typescript-eslint` does not yet support the native Go port
+  (tracked in `typescript-eslint#10940`).
 
 ## [0.5.0] — 2026-06-07
 
