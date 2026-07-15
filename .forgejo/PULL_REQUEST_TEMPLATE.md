@@ -35,6 +35,14 @@ Tracker data (cookies, domains, companies) lives in
 **not in this repo**. If the change is about a specific tracker being
 missed or misclassified, open the PR there.
 
+## CLA acceptance
+
+```text
+I have read and agree to the CLA.
+```
+
+Paste the line above (uncommented) into your PR description. Maintainers will not merge without it. See [CONTRIBUTING.md](../CONTRIBUTING.md) and [CLA.md](../CLA.md).
+
 ## Screenshots / recordings
 
 <!-- For UI changes, attach before/after screenshots or a short clip. -->
