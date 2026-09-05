@@ -5,6 +5,34 @@ All notable changes to the ConsentTheater extension are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-09-05
+
+### Highlights
+
+A dependency and data release. Bumps `@consenttheater/playbill`
+0.6.0 → 0.7.0 — the catalogue grew to 10,599 entries (4,208 cookies +
+6,391 domains, 3,003 companies) with 3 new consent cookies and 1 consent
+domain — and refreshes all dev dependencies except `typescript`
+(held at 6.0.3).
+
+### Changed
+
+- **Bumped `@consenttheater/playbill` to 0.7.0.** New consent cookies:
+  SureCookie session identifier (`surecookie_session_id`, Brainstorm
+  Force) and WebToffee GDPR Cookie Consent state (`wt_consent`), both
+  reported by Pasi R. — thanks for the report and support. Zest CMP
+  per-category consent state (`zest_consent`). New consent domain:
+  `geo.cookiezest.com` (Zest geo jurisdiction API). Record counts in
+  Settings and all exports are read from the installed Playbill at
+  runtime, so they update automatically.
+- **Dependency refresh.** All devDependencies bumped to current
+  (vite 8.2.2, eslint 10.10.0, typescript-eslint 8.69.0, addons-linter
+  10.10.0, @types/node 26.4.1, sharp 0.35.4, among others). `typescript`
+  intentionally held at 6.0.3 — 7.x is the native (Go) port and is not
+  yet supported by `typescript-eslint`. `vitest` held at 4.x (5.0 is a
+  major). Full verify loop green: typecheck, lint, 16/16 tests,
+  Chrome + Firefox builds, both store validators.
+
 ## [0.6.0] — 2026-07-10
 
 ### Highlights
@@ -406,7 +434,8 @@ Initial public release.
   from Preact's runtime implementation of `dangerouslySetInnerHTML` and does
   not reflect user-controlled input.
 
-[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.6.0...HEAD
+[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.7.0...HEAD
+[0.7.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.7.0
 [0.6.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.6.0
 [0.5.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.5.0
 [0.4.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.4.0

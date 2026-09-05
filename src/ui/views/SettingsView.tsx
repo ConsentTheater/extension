@@ -190,6 +190,8 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
               <a href="https://consenttheater.org?utm_source=extension" target="_blank" rel="noopener" className="text-link hover:underline">consenttheater.org</a>
               {' · '}
               <a href="https://codeberg.org/ConsentTheater/extension" target="_blank" rel="noopener" className="text-link hover:underline">Codeberg</a>
+              {' · '}
+              <a href="https://codeberg.org/ConsentTheater/extension/src/branch/main/CHANGELOG.md" target="_blank" rel="noopener" className="text-link hover:underline">What's new</a>
             </p>
             <p className="text-[10px]">See what websites are really tracking — in plain language. Powered by Playbill, the world's largest open-source tracker knowledge base.</p>
           </div>
