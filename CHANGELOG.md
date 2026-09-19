@@ -5,6 +5,43 @@ All notable changes to the ConsentTheater extension are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — 2026-09-19
+
+### Highlights
+
+A data release. Bumps `@consenttheater/playbill` 0.7.0 → 0.8.0 —
+the catalogue grew to 10,236 entries (4,112 cookies + 6,124 domains)
+across 3,017 unique companies, with 36 new domain signatures across five
+PRs from a single contributor, plus attribution corrections and a
+Contentsquare family cleanup — and refreshes dev dependencies. Record
+counts in Settings and all exports are read from the installed Playbill
+at runtime, so they update automatically.
+
+### Changed
+
+- **Bumped `@consenttheater/playbill` to 0.8.0.** New analytics
+  signatures include Microsoft Application Insights, Chartbeat, Datadog
+  EU (datadoghq.eu), Oracle Eloqua (en25.com), Yandex (mc.yandex.com),
+  Siteimprove, and StatCounter; advertising adds Google Ad Traffic
+  Quality (adtrafficquality.google), Google Tag Services
+  (googletagservices.com), Microsoft (bing.net), and TikTok
+  (analytics-ipv6.tiktokw.us); functional adds a Nordic/EU SaaS cluster
+  (AddSearch, Findkit, Giosg, LeadDesk, Leadoo, Serviceform, Trustindex,
+  TrustMary, Videobot); marketing adds Brevo, GetSiteControl, Glimr,
+  MailMunch, Ortto, and Superlines; consent adds Secure Privacy CMP
+  (secureprivacy.ai). `cookie_notice_accepted` reattributed to
+  Hu-manity.co. Hotjar, Heap, ClickTale, and Beamer entries now share
+  one company name — `Contentsquare` — with the product in `service`.
+  With thanks to Pasi R. (Codeberg @PasiRuo) for five verified PRs
+  adding 36 domain signatures.
+- **Dependency refresh.** `vite` 8.3.0, `eslint` 10.11.0,
+  `typescript-eslint` 8.70.0, `addons-linter` 10.13.0, `@types/node`
+  26.6.2, `tailwind-merge` 3.7.0, and `@types/chrome` 0.3.0 (major).
+  `typescript` held at 6.0.3 (7.x unsupported by `typescript-eslint`),
+  `vitest`/`@vitest/ui` held at 4.x (5.0 is a major). Full verify loop
+  green: typecheck, lint, 16/16 tests, Chrome + Firefox builds, both
+  store validators.
+
 ## [0.7.0] — 2026-09-05
 
 ### Highlights
@@ -434,7 +471,8 @@ Initial public release.
   from Preact's runtime implementation of `dangerouslySetInnerHTML` and does
   not reflect user-controlled input.
 
-[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.7.0...HEAD
+[0.8.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.8.0
+[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.8.0...HEAD
 [0.7.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.7.0
 [0.6.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.6.0
 [0.5.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.5.0
