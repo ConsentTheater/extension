@@ -197,19 +197,51 @@ const SUSPICIOUS_JSON_KEYS = [
 ];
 
 /**
+ * Parse a value as JSON, transparently handling percent-encoded payloads
+ * (OneTrust-style `%7B%22version%22...`). Returns undefined when not JSON.
+ */
+function parseJsonMaybeEncoded(value: string): unknown {
+  try { return JSON.parse(value); } catch { /* fall through */ }
+  if (!value.includes('%')) return undefined;
+  try { return JSON.parse(decodeURIComponent(value)); } catch { return undefined; }
+}
+
+/**
+ * Pretty-print a stringified JSON object/array stored in a cookie or storage
+ * entry. Returns null when the value is not decodable JSON.
+ */
+function decodeQueryComponent(s: string): string {
+  try { return decodeURIComponent(s.replace(/\+/g, ' ')); } catch { return s; }
+}
+
+/** OneTrust-style `key=value&key=value` payloads → aligned key: value lines. */
+function prettyQueryValue(raw: string): string | null {
+  const pairs = raw.split('&').filter(Boolean);
+  if (pairs.length < 2) return null;
+  const lines: string[] = [];
+  for (const pair of pairs) {
+    const eq = pair.indexOf('=');
+    if (eq < 1) return null;
+    lines.push(`${decodeQueryComponent(pair.slice(0, eq))}: ${decodeQueryComponent(pair.slice(eq + 1))}`);
+  }
+  return lines.join('\n');
+}
+
+export function prettyJsonValue(raw: string): string | null {
+  const parsed = parseJsonMaybeEncoded(raw);
+  if (parsed && typeof parsed === 'object') return JSON.stringify(parsed, null, 2);
+  return prettyQueryValue(raw);
+}
+
+/**
  * Deep-scan a stringified JSON value for embedded identifiers.
  * Returns found suspicious keys with their values.
  */
 export function scanJsonValue(value: string): Array<{ key: string; value: string; reason: string }> {
   const findings: Array<{ key: string; value: string; reason: string }> = [];
 
-  // Try to parse as JSON
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    return findings;
-  }
+  const parsed = parseJsonMaybeEncoded(value);
+  if (parsed === undefined) return findings;
 
   const seenPaths = new Set<string>();
 

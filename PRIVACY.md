@@ -43,7 +43,7 @@ storage lives on your device, is scoped to the extension, and is not
 synchronized to any cloud:
 
 - Your **UI preferences** (theme, dark mode, high-contrast mode, HAR
-  sanitizer toggle).
+  sanitizer toggle, pretty value output).
 - The **Playbill tracker catalogue version** the extension is using (a single
   string like `0.6.0`, so the sidebar can display which version you have).
 

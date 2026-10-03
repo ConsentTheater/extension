@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Sun, Moon, Desktop, Eye, TextAa, Database, FileCode } from '@phosphor-icons/react';
+import { ArrowLeft, Sun, Moon, Desktop, Eye, TextAa, Database, FileCode, BracketsCurly } from '@phosphor-icons/react';
 import { Button } from '@/ui/components/ui/button';
 import { Card, CardContent } from '@/ui/components/ui/card';
 import { Separator } from '@/ui/components/ui/separator';
@@ -90,6 +90,39 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
                   variant={settings.sanitizeHar === value ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => update({ sanitizeHar: value })}
+                  className="flex-1 h-8 text-xs"
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* JSON decode */}
+          <div>
+            <div className="flex items-start gap-2">
+              <BracketsCurly size={14} className="mt-1 shrink-0" />
+              <div>
+                <span className="text-xs font-semibold">Pretty Value Output</span>
+                <p className="text-[10px] text-muted-foreground">
+                  Pretty-print stringified JSON and key=value payloads in cookie and storage values, so you can read what is actually stored. Turn off to see raw values.
+                </p>
+              </div>
+            </div>
+            <div role="radiogroup" aria-label="JSON decode" className="flex gap-1 mt-2">
+              {([
+                { value: true, label: 'On' },
+                { value: false, label: 'Off' }
+              ] as const).map(({ value, label }) => (
+                <Button
+                  key={label}
+                  role="radio"
+                  aria-checked={settings.prettyValues === value}
+                  variant={settings.prettyValues === value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => update({ prettyValues: value })}
                   className="flex-1 h-8 text-xs"
                 >
                   {label}

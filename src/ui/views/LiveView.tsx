@@ -12,7 +12,7 @@ import { browserAPI } from '@/lib/browser-api';
 import type { LiveCookie, LiveTracker, StorageEntry } from '@/ui/types/messages';
 import type { HarLog } from '@/lib/har-types';
 import type { ConsentBurden } from '@/lib/tracker-matcher';
-import { detectSuspiciousPattern, scanJsonValue } from '@/lib/pattern-detector';
+import { detectSuspiciousPattern, scanJsonValue, prettyJsonValue } from '@/lib/pattern-detector';
 import { UrlBar } from '@/ui/components/scan/UrlBar';
 
 const TRACKER_CATEGORIES = new Set([
@@ -332,7 +332,7 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
             </Card>
           ) : (
             domainGroups.map(group => (
-              <DomainGroup key={group.domain} group={group} />
+              <DomainGroup key={group.domain} group={group} prettyValues={settings.prettyValues} />
             ))
           )}
         </div>
@@ -382,10 +382,10 @@ export function LiveView({ onSettingsOpen, url: pageUrl, supported }: { onSettin
             <Separator />
             <div className="flex flex-col gap-2 p-4">
               {localStorage.length > 0 && (
-                <StorageSection title="localStorage" entries={localStorage} icon={<Database size={14} weight="duotone" />} />
+                <StorageSection title="localStorage" entries={localStorage} icon={<Database size={14} weight="duotone" />} prettyValues={settings.prettyValues} />
               )}
               {sessionStorage.length > 0 && (
-                <StorageSection title="sessionStorage" entries={sessionStorage} icon={<Database size={14} weight="duotone" />} />
+                <StorageSection title="sessionStorage" entries={sessionStorage} icon={<Database size={14} weight="duotone" />} prettyValues={settings.prettyValues} />
               )}
             </div>
           </>
@@ -483,7 +483,7 @@ function groupByDomain(cookies: LiveCookie[]): DomainGroupData[] {
     });
 }
 
-function DomainGroup({ group }: { group: DomainGroupData; pageHostname?: string }) {
+function DomainGroup({ group, prettyValues }: { group: DomainGroupData; pageHostname?: string; prettyValues: boolean }) {
   const [expanded, setExpanded] = useState(group.isThirdParty);
 
   return (
@@ -520,7 +520,7 @@ function DomainGroup({ group }: { group: DomainGroupData; pageHostname?: string 
       {expanded && (
         <CardContent className="px-3 pb-2 pt-0">
           {group.cookies.map(c => (
-            <CookieRow key={`${c.name}-${c.domain}-${c.path}`} cookie={c} />
+            <CookieRow key={`${c.name}-${c.domain}-${c.path}`} cookie={c} prettyValues={prettyValues} />
           ))}
         </CardContent>
       )}
@@ -528,7 +528,31 @@ function DomainGroup({ group }: { group: DomainGroupData; pageHostname?: string 
   );
 }
 
-function CookieRow({ cookie }: { cookie: LiveCookie }) {
+function ValuePre({ value, prettyValues }: { value: string; prettyValues: boolean }) {
+  const [override, setOverride] = useState<boolean | null>(null);
+  const decodable = prettyJsonValue(value) !== null;
+  const decoded = override ?? prettyValues;
+  const pretty = decoded ? prettyJsonValue(value) : null;
+  return (
+    <div className="relative mt-0.5">
+      <pre className={`overflow-auto whitespace-pre-wrap break-all bg-muted px-2 py-1 font-mono text-[10px] text-foreground/70 ${pretty ? 'max-h-32 border-l-2 border-link/40' : 'max-h-16'}`}>
+        {pretty ?? `${value.slice(0, 300)}${value.length > 300 ? '...' : ''}`}
+      </pre>
+      {decodable && (
+        <button
+          type="button"
+          onClick={() => setOverride(!decoded)}
+          title={decoded ? 'Show raw value' : 'Pretty-print JSON'}
+          className="absolute right-1 top-1 rounded border border-border bg-background/80 px-1 py-0.5 font-mono text-[9px] text-muted-foreground hover:text-foreground"
+        >
+          {decoded ? 'raw' : 'pretty'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CookieRow({ cookie, prettyValues }: { cookie: LiveCookie; prettyValues: boolean }) {
   return (
     <div className="border-b border-border/50 last:border-0 py-1.5">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -564,12 +588,12 @@ function CookieRow({ cookie }: { cookie: LiveCookie }) {
           ⚠ {cookie.suspicionReasons[0]}
         </p>
       )}
-      <pre className="mt-0.5 max-h-16 overflow-auto whitespace-pre-wrap break-all bg-muted px-2 py-1 font-mono text-[10px] text-foreground/70">{cookie.value.slice(0, 300)}{cookie.value.length > 300 ? '...' : ''}</pre>
+      <ValuePre value={cookie.value} prettyValues={prettyValues} />
     </div>
   );
 }
 
-function StorageSection({ title, entries, icon }: { title: string; entries: StorageEntry[]; icon: preact.ComponentChildren }) {
+function StorageSection({ title, entries, icon, prettyValues }: { title: string; entries: StorageEntry[]; icon: preact.ComponentChildren; prettyValues: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
   // Check if any entry has suspicious patterns
@@ -611,7 +635,7 @@ function StorageSection({ title, entries, icon }: { title: string; entries: Stor
                     <span className="text-[9px] text-warning font-semibold">SUSPECTED ID</span>
                   )}
                 </div>
-                <pre className="mt-0.5 max-h-16 overflow-auto whitespace-pre-wrap break-all bg-muted px-2 py-1 font-mono text-[10px] text-foreground/70">{e.value.slice(0, 300)}</pre>
+                <ValuePre value={e.value} prettyValues={prettyValues} />
                 {suspicion.level !== 'none' && suspicion.reasons.length > 0 && (
                   <p className="mt-0.5 text-[10px] text-warning">⚠ {suspicion.reasons[0]}</p>
                 )}
