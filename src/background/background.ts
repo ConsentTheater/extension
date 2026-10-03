@@ -587,7 +587,7 @@ bAPI.tabs.onRemoved.addListener((tabId) => {
   if (state?.updateTimer) clearTimeout(state.updateTimer);
   tabStates.delete(tabId);
   tabDomains.delete(tabId);
-
+  clearCachedHar(tabId);
 });
 
 bAPI.tabs.onUpdated.addListener((tabId, changeInfo) => {
@@ -621,6 +621,7 @@ bAPI.tabs.onUpdated.addListener((tabId, changeInfo) => {
       state.hostname = null;
       state.lastReportItemCount = 0;
       resetHar(state.har);
+      clearCachedHar(tabId);
       void setBadge(tabId, '', '#6b7280');
       // Tell the sidebar to resync — its useCurrentTab also triggers on
       // changeInfo.url, but pushing the signal explicitly avoids the race
@@ -726,6 +727,7 @@ async function startTest(tabId: number): Promise<TestResponse> {
   state.hostname = url.hostname;
   startPage(state.har, url.hostname);
   tabStates.set(tabId, state);
+  clearCachedHar(tabId);
 
   await setBadge(tabId, '...', '#6b7280');
 
@@ -751,6 +753,7 @@ async function finalizeTest(tabId: number): Promise<void> {
   state.phase = 'reporting';
   state.report = buildReport(state);
   state.lastReportItemCount = state.cookies.length + state.requests.length;
+  await cacheHar(tabId, buildHar(state.har, harMeta()));
 
   await updateBadgeFromReport(tabId, state.report);
   pushToSidebar({ type: 'reportReady', tabId });
@@ -876,22 +879,47 @@ async function buildLiveReport(tabId: number): Promise<Report> {
 
 interface HarResponse { har: HarLog | null; error?: string }
 
-function getHar(tabId: number): HarResponse {
-  const state = tabStates.get(tabId);
-  if (!state) return { har: null, error: 'No scan state for this tab' };
-  if (state.har.entries.length === 0 && state.har.pending.size === 0) {
-    return { har: null, error: 'No requests captured yet — start a scan first' };
-  }
+// MV3 kills the idle service worker (~30s), wiping `tabStates` — the scan's
+// HAR included. Keep the finished log in storage.session (memory-only, dies
+// with the browser) so an export after a worker restart still works.
+const HAR_CACHE_PREFIX = 'ctHar:';
+
+function harCacheKey(tabId: number): string {
+  return `${HAR_CACHE_PREFIX}${tabId}`;
+}
+
+async function cacheHar(tabId: number, har: HarLog): Promise<void> {
+  try { await bAPI.storage.session.set({ [harCacheKey(tabId)]: har }); } catch { /* quota — memory copy still live */ }
+}
+
+async function readCachedHar(tabId: number): Promise<HarLog | null> {
+  try {
+    const key = harCacheKey(tabId);
+    const res = await bAPI.storage.session.get(key);
+    return (res as Record<string, HarLog | undefined>)[key] ?? null;
+  } catch { return null; }
+}
+
+function clearCachedHar(tabId: number): void {
+  try { void bAPI.storage.session.remove(harCacheKey(tabId)).catch(() => {}); } catch { /* no session API */ }
+}
+
+function harMeta(): { extensionVersion: string; browserName: string; browserVersion: string; playbillVersion: string } {
   const browserName = (typeof browser !== 'undefined' && browser?.runtime) ? 'Firefox' : 'Chrome';
   const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
-  return {
-    har: buildHar(state.har, {
-      extensionVersion: __EXTENSION_VERSION__,
-      browserName,
-      browserVersion: ua,
-      playbillVersion: __PLAYBILL_VERSION__
-    })
-  };
+  return { extensionVersion: __EXTENSION_VERSION__, browserName, browserVersion: ua, playbillVersion: __PLAYBILL_VERSION__ };
+}
+
+async function getHar(tabId: number): Promise<HarResponse> {
+  const state = tabStates.get(tabId);
+  if (!state || (state.har.entries.length === 0 && state.har.pending.size === 0)) {
+    const cached = await readCachedHar(tabId);
+    if (cached) return { har: cached };
+    return { har: null, error: state ? 'No requests captured yet — start a scan first' : 'No scan state for this tab' };
+  }
+  const har = buildHar(state.har, harMeta());
+  await cacheHar(tabId, har);
+  return { har };
 }
 
 function buildReport(state: TabState): Report {
