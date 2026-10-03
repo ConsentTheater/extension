@@ -5,6 +5,88 @@ All notable changes to the ConsentTheater extension are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] — 2026-10-03
+
+### Highlights
+
+A data and feature release. Bumps `@consenttheater/playbill` 0.8.0 → 0.9.0 —
+the catalogue grew to 10,435 entries (4,123 cookies + 6,312 domains)
+across 3,150 unique companies, with 199 new entries (188 domains,
+11 cookies) from six contributor PRs. The consent category doubled
+in size, and new coverage spans Nordic and EU SaaS, server-side
+tagging, session replay, and fraud prevention. On top of the data bump:
+HAR exports now survive service-worker restarts, report stats count
+unique hosts instead of raw network events, and cookie/storage values
+that hide JSON or key=value payloads get a readable pretty-print view.
+Record counts in Settings and all exports are read from the installed
+Playbill at runtime, so they update automatically.
+
+### Added
+
+- **Pretty Value Output.** Cookie and storage values that are
+  stringified JSON, percent-encoded JSON (OneTrust-style), or
+  `key=value&key=value` payloads now render pretty-printed in the
+  sidebar, so you can read what is actually stored instead of
+  URL-encoded mush. Controlled by a new Settings toggle (on by
+  default); each value also gets a `pretty`/`raw` chip to flip just
+  that value without leaving the view. Values that aren't decodable
+  are shown raw as before, and HAR/PDF/text exports are untouched.
+- **HAR exports survive service-worker restarts.** Chrome kills the
+  idle MV3 worker (~30s), which used to wipe the captured HAR — the
+  export then claimed no scan had run. The finished log is now kept
+  in session storage (memory-only, cleared with the browser) and
+  served from there after a restart, invalidated on navigation or a
+  new scan.
+
+### Fixed
+
+- **Report stats counted raw network events.** The summary said
+  "66 requests before consent" while the table listed 24 hosts —
+  stats counted one entry per webRequest event, tables counted unique
+  hostnames. Capture now records one entry per hostname (first hit
+  wins), so the summary, tables, badge, and text export all agree.
+  The HAR still carries the full per-request trace.
+- **Percent-encoded payloads escaped identifier detection.** The
+  SUSPECTED ID scan only parsed plain JSON, so a URL-encoded user ID
+  went unflagged. It now decodes percent-encoded payloads too.
+
+### Changed
+
+- **Bumped `@consenttheater/playbill` to 0.9.0.** Consent platforms
+  nearly doubled: CCM19, Clickio, Consent Studio, Consentik, Consently,
+  Consentmo, ConsentPro, CookieConfirm, CookieHub, CookieManager.dk,
+  CookiePal, Cookie Script, CookieTractor, CoookieMonster, Enzuzo,
+  Gravito, Truendo, 2B Advice, Avada, Claspo, Cookie Information,
+  Cookie Reports, Cookiebot and OneTrust EU endpoints,
+  FreePrivacyPolicy.com, GoodApps, Hu-manity.co, Iubenda, Pandectes,
+  Usercentrics, Zoho Campaigns CMP, and the legacy IAB Quantcast Choice
+  endpoint, plus consent state cookies `cmplz_consent_mode` (Complianz),
+  `gravitosync` (Gravito Sync), and `_pandectes_gdpr` (Pandectes).
+  Functional adds a Nordic and EU SaaS cluster — chat and support
+  (Giosg, Chatbase, Chatra, Finnchat, ImBox, LiveAgent, Zendesk Chat
+  legacy), booking and payments (BokaMera, Bókun, Paytrail, Qliro),
+  forms and widgets (Basin, Fillout, POWR, Elfsight), e-commerce add-ons
+  (GoAffPro, Seal Subscriptions, Searchanise, WPForms), video
+  (Screen9, JW Player, Sketchfab, Videoly), and platform hosts (Odoo,
+  Zoho CRM, Genesys Cloud EU). Analytics adds EU and privacy-focused
+  platforms (etracker, Umami Cloud, Rybbit, Koko Analytics, Burst
+  Statistics) and HubSpot EU script hosts. Marketing adds
+  LeadConnector/HighLevel, Custobar, Leadfeeder, Omnisend, Yotpo,
+  Klaviyo, and survey and UGC tools. Session recording adds Lucky
+  Orange, Plerdy, Snitcher, TruConversion, and TWIPLA. Advertising
+  adds Aditude, Simpli.fi, and wetracked.io; security adds fraud0;
+  tag management adds Tracklution server-side tagging. With thanks
+  to Pasi R. (Codeberg @PasiRuo) for six PRs adding 199 verified
+  entries.
+- **Dependency refresh.** `vite` 8.3.2, `eslint` 10.12.0,
+  `eslint-plugin-security` 4.2.0, `typescript-eslint` 8.71.0,
+  `@types/chrome` 0.3.4, `@types/node` 26.6.4, `sharp` 0.35.5,
+  `fs-extra` 11.4.1, `vitest` 4.1.11. `typescript` held at 6.0.3
+  (7.x unsupported by `typescript-eslint`), `preact` held at 10.x
+  (11.0 is a major), `vitest`/`@vitest/ui` held at 4.x (5.0 is a
+  major). Full verify loop green: typecheck, lint, 22/22 tests,
+  Chrome + Firefox builds, both store validators.
+
 ## [0.8.0] — 2026-09-19
 
 ### Highlights
@@ -471,8 +553,9 @@ Initial public release.
   from Preact's runtime implementation of `dangerouslySetInnerHTML` and does
   not reflect user-controlled input.
 
+[0.9.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.9.0
+[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.9.0...HEAD
 [0.8.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.8.0
-[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.8.0...HEAD
 [0.7.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.7.0
 [0.6.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.6.0
 [0.5.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.5.0
