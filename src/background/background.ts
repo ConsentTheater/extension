@@ -418,20 +418,23 @@ bAPI.webRequest.onBeforeRequest.addListener(
     // professional auditors who want a full network trace, not just trackers.
     recordRequest(state.har, details.requestId, details.url, details.method, details.type, details.timeStamp, beforeConsent, match);
 
-    // Tracker pipeline — third-party only, must match Playbill.
+    // Tracker pipeline — third-party only, must match Playbill. One entry per
+    // hostname (first hit wins), so stats and tables count the same thing.
     if (match) {
-      state.requests.push({
-        url: details.url,
-        hostname: host,
-        company: match.company,
-        service: match.service,
-        category: match.category,
-        consent_burden: match.consent_burden,
-        note: match.note,
-        type: details.type,
-        ts: details.timeStamp,
-        beforeConsent
-      });
+      if (!state.requests.some(r => r.hostname === host)) {
+        state.requests.push({
+          url: details.url,
+          hostname: host,
+          company: match.company,
+          service: match.service,
+          category: match.category,
+          consent_burden: match.consent_burden,
+          note: match.note,
+          type: details.type,
+          ts: details.timeStamp,
+          beforeConsent
+        });
+      }
 
       if (state.phase === 'monitoring') scheduleUpdate(details.tabId, state);
     }
