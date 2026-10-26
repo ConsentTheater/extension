@@ -5,6 +5,26 @@ All notable changes to the ConsentTheater extension are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] — 2026-10-26
+
+### Highlights
+
+Updates the bundled Playbill catalogue to 0.10.0 and refreshes dependencies.
+Includes Preact 11, Vitest 5 and chokidar 6; TypeScript stays at 6.
+
+### Changed
+
+- Bumped `@consenttheater/playbill` from 0.9.0 to 0.10.0.
+- Updated dependencies and the lockfile, including Preact 11.0.2,
+  Vitest and Vitest UI 5.0.5, chokidar 6.0.0, Vite 8.3.5,
+  ESLint 10.13.0, Radix components, browser types and addons-linter.
+- Bumped the extension version to 0.10.0 across all manifests.
+
+### Fixed
+
+- Heading wrapper prop types now match their HTML elements for
+  compatibility with Preact 11's stricter ARIA role types.
+
 ## [0.9.0] — 2026-10-03
 
 ### Highlights
@@ -554,7 +574,8 @@ Initial public release.
   not reflect user-controlled input.
 
 [0.9.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.9.0
-[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.9.0...HEAD
+[0.10.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.10.0
+[Unreleased]: https://codeberg.org/ConsentTheater/extension/compare/v0.10.0...HEAD
 [0.8.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.8.0
 [0.7.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.7.0
 [0.6.0]: https://codeberg.org/ConsentTheater/extension/releases/tag/v0.6.0
