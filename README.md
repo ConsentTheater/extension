@@ -306,3 +306,5 @@ The AGPL's §13 ensures that if you modify ConsentTheater and host it as a netwo
 (a SaaS GDPR scanner, a hosted audit tool, etc.), the modified source must be made available
 to users of that service. In plain terms: this project is always free and always open, even
 when run on a server.
+
+ConsentTheater is created and maintained by [Alex Zappa](https://alex.zappa.dev/).
